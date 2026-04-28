@@ -3,6 +3,10 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
     time::Duration,
 };
 
@@ -14,7 +18,7 @@ use reqwest::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::{utils::config::BundleType, utils::platform::bundle_type, AppHandle};
+use tauri::{utils::config::BundleType, utils::platform::bundle_type, AppHandle, Emitter};
 use tauri_plugin_updater::UpdaterExt;
 
 use crate::network_proxy::normalize_proxy_url;
@@ -29,6 +33,7 @@ const RELEASE_MANIFEST_URL_TEMPLATE: &str =
 const SYSTEM_PACKAGE_MANIFEST_ASSET_NAME: &str = "system-packages.json";
 const SYSTEM_PACKAGE_MANIFEST_SIGNATURE_ASSET_NAME: &str = "system-packages.json.sig";
 const RELEASES_USER_AGENT: &str = "LessAI-VersionManager/1.0";
+const UPDATE_PROGRESS_EVENT: &str = "update_progress";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,6 +46,14 @@ pub struct ReleaseVersionSummary {
     pub published_at: Option<String>,
     pub prerelease: bool,
     pub updater_available: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdateProgressEvent {
+    phase: String,
+    downloaded_bytes: u64,
+    total_bytes: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -112,8 +125,7 @@ fn normalize_release_tag(tag: &str) -> Result<String, String> {
 }
 
 fn normalize_version_from_tag(tag: &str) -> String {
-    tag.trim_start_matches(['v', 'V'])
-        .to_string()
+    tag.trim_start_matches(['v', 'V']).to_string()
 }
 
 fn current_system_package_kind() -> Option<SystemPackageKind> {
@@ -129,6 +141,22 @@ fn target_package_extension(kind: SystemPackageKind) -> &'static str {
         SystemPackageKind::Deb => ".deb",
         SystemPackageKind::Rpm => ".rpm",
     }
+}
+
+fn emit_update_progress(
+    app: &AppHandle,
+    phase: &str,
+    downloaded_bytes: u64,
+    total_bytes: Option<u64>,
+) {
+    let _ = app.emit(
+        UPDATE_PROGRESS_EVENT,
+        UpdateProgressEvent {
+            phase: phase.to_string(),
+            downloaded_bytes,
+            total_bytes,
+        },
+    );
 }
 
 fn current_arch_aliases() -> Vec<String> {
@@ -175,10 +203,7 @@ fn score_manifest_arch(arch: &str, aliases: &[String]) -> i32 {
         return 100 - index as i32;
     }
 
-    if matches!(
-        normalized.as_str(),
-        "all" | "any" | "noarch" | "universal"
-    ) {
+    if matches!(normalized.as_str(), "all" | "any" | "noarch" | "universal") {
         return 10;
     }
 
@@ -261,7 +286,18 @@ async fn download_release_asset_bytes(
     client: &Client,
     asset: &GithubReleaseAsset,
 ) -> Result<Vec<u8>, String> {
-    let response = client
+    download_release_asset_bytes_with_progress(client, asset, |_, _| {}).await
+}
+
+async fn download_release_asset_bytes_with_progress<F>(
+    client: &Client,
+    asset: &GithubReleaseAsset,
+    mut on_progress: F,
+) -> Result<Vec<u8>, String>
+where
+    F: FnMut(u64, Option<u64>),
+{
+    let mut response = client
         .get(&asset.browser_download_url)
         .header(USER_AGENT, RELEASES_USER_AGENT)
         .send()
@@ -276,11 +312,26 @@ async fn download_release_asset_bytes(
         ));
     }
 
-    response
-        .bytes()
+    let total_bytes = response.content_length();
+    let mut downloaded_bytes = 0_u64;
+    let mut bytes = Vec::with_capacity(
+        total_bytes
+            .and_then(|value| usize::try_from(value).ok())
+            .unwrap_or(0),
+    );
+    on_progress(downloaded_bytes, total_bytes);
+
+    while let Some(chunk) = response
+        .chunk()
         .await
-        .map(|bytes| bytes.to_vec())
-        .map_err(|error| format!("读取资产 {} 失败：{error}", asset.name))
+        .map_err(|error| format!("读取资产 {} 失败：{error}", asset.name))?
+    {
+        downloaded_bytes = downloaded_bytes.saturating_add(chunk.len() as u64);
+        bytes.extend_from_slice(&chunk);
+        on_progress(downloaded_bytes, total_bytes);
+    }
+
+    Ok(bytes)
 }
 
 fn parse_system_packages_manifest(bytes: &[u8]) -> Result<SystemPackagesManifest, String> {
@@ -317,15 +368,13 @@ fn parse_updater_public_key(pubkey_b64: &str) -> Result<PublicKey, String> {
 }
 
 fn updater_public_key_from_config(app: &AppHandle) -> Result<PublicKey, String> {
-    let updater_config = app
-        .config()
-        .plugins
-        .0
-        .get("updater")
-        .ok_or_else(|| "应用配置缺少 updater 插件配置，无法校验系统安装清单签名。".to_string())?;
-    let updater_object = updater_config
-        .as_object()
-        .ok_or_else(|| "应用配置中的 updater 插件格式无效，无法校验系统安装清单签名。".to_string())?;
+    let updater_config =
+        app.config().plugins.0.get("updater").ok_or_else(|| {
+            "应用配置缺少 updater 插件配置，无法校验系统安装清单签名。".to_string()
+        })?;
+    let updater_object = updater_config.as_object().ok_or_else(|| {
+        "应用配置中的 updater 插件格式无效，无法校验系统安装清单签名。".to_string()
+    })?;
     let pubkey_b64 = updater_object
         .get("pubkey")
         .and_then(|value| value.as_str())
@@ -429,7 +478,10 @@ fn resolve_effective_proxy(app: &AppHandle, proxy: Option<String>) -> Option<Str
 
 fn extract_github_api_error_message(body: &str) -> Option<String> {
     let value: serde_json::Value = serde_json::from_str(body).ok()?;
-    value["message"].as_str().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+    value["message"]
+        .as_str()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 fn format_github_api_error(error: reqwest::Error, action: &str) -> String {
@@ -437,7 +489,10 @@ fn format_github_api_error(error: reqwest::Error, action: &str) -> String {
     lines.push(format!("{action}失败：{error}"));
 
     if error.is_timeout() {
-        lines.push("提示：请求超时。可尝试在网络设置中配置代理（如 http://127.0.0.1:7890）后重试。".to_string());
+        lines.push(
+            "提示：请求超时。可尝试在网络设置中配置代理（如 http://127.0.0.1:7890）后重试。"
+                .to_string(),
+        );
     }
     if error.is_connect() {
         lines.push(
@@ -476,11 +531,9 @@ pub async fn list_release_versions(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        let detail = extract_github_api_error_message(&body)
-            .unwrap_or_else(|| body.trim().to_string());
-        if status.as_u16() == 403
-            && detail.to_lowercase().contains("rate limit")
-        {
+        let detail =
+            extract_github_api_error_message(&body).unwrap_or_else(|| body.trim().to_string());
+        if status.as_u16() == 403 && detail.to_lowercase().contains("rate limit") {
             return Err(format!(
                 "拉取版本列表失败：GitHub API 请求次数超限（未认证限制 60 次/小时）。\n\
                  请在网络畅通的环境稍等片刻后重试，或前往 GitHub 页面手动下载安装。\n\
@@ -535,6 +588,8 @@ pub async fn switch_release_version(
         );
     }
 
+    emit_update_progress(&app, "checking", 0, None);
+
     let tag = normalize_release_tag(&tag)?;
     let endpoint = RELEASE_MANIFEST_URL_TEMPLATE.replace("{tag}", &tag);
     let endpoint = Url::parse(&endpoint).map_err(|error| format!("构建更新地址失败：{error}"))?;
@@ -566,8 +621,38 @@ pub async fn switch_release_version(
     };
 
     let installed_version = update.version.to_string();
+    emit_update_progress(&app, "downloading", 0, None);
+    let downloaded_bytes = Arc::new(AtomicU64::new(0));
+    let total_bytes = Arc::new(AtomicU64::new(0));
+    let download_progress_app = app.clone();
+    let download_finished_app = app.clone();
+    let downloaded_for_chunk = Arc::clone(&downloaded_bytes);
+    let downloaded_for_finish = Arc::clone(&downloaded_bytes);
+    let total_for_chunk = Arc::clone(&total_bytes);
+    let total_for_finish = Arc::clone(&total_bytes);
     update
-        .download_and_install(|_, _| {}, || {})
+        .download_and_install(
+            move |chunk_length, content_length| {
+                if let Some(content_length) = content_length {
+                    total_for_chunk.store(content_length, Ordering::Relaxed);
+                }
+                let chunk_length = chunk_length as u64;
+                let downloaded = downloaded_for_chunk
+                    .fetch_add(chunk_length, Ordering::Relaxed)
+                    .saturating_add(chunk_length);
+                let total = content_length.or_else(|| {
+                    let stored_total = total_for_chunk.load(Ordering::Relaxed);
+                    (stored_total > 0).then_some(stored_total)
+                });
+                emit_update_progress(&download_progress_app, "downloading", downloaded, total);
+            },
+            move || {
+                let downloaded = downloaded_for_finish.load(Ordering::Relaxed);
+                let stored_total = total_for_finish.load(Ordering::Relaxed);
+                let total = (stored_total > 0).then_some(stored_total);
+                emit_update_progress(&download_finished_app, "installing", downloaded, total);
+            },
+        )
         .await
         .map_err(|error| format!("安装版本 {tag} 失败：{error}"))?;
 
@@ -584,10 +669,13 @@ pub async fn install_system_package_release(
         return Err("当前安装包类型不需要系统包管理器安装。".to_string());
     };
 
+    emit_update_progress(&app, "checking", 0, None);
+
     let tag = normalize_release_tag(&tag)?;
     let client = build_reqwest_client(resolve_effective_proxy(&app, proxy), 30)?;
     let endpoint = GITHUB_RELEASE_BY_TAG_API_URL_TEMPLATE.replace("{tag}", &tag);
-    let endpoint = Url::parse(&endpoint).map_err(|error| format!("构建发布查询地址失败：{error}"))?;
+    let endpoint =
+        Url::parse(&endpoint).map_err(|error| format!("构建发布查询地址失败：{error}"))?;
 
     let response = client
         .get(endpoint)
@@ -600,11 +688,9 @@ pub async fn install_system_package_release(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        let detail = extract_github_api_error_message(&body)
-            .unwrap_or_else(|| body.trim().to_string());
-        if status.as_u16() == 403
-            && detail.to_lowercase().contains("rate limit")
-        {
+        let detail =
+            extract_github_api_error_message(&body).unwrap_or_else(|| body.trim().to_string());
+        if status.as_u16() == 403 && detail.to_lowercase().contains("rate limit") {
             return Err(format!(
                 "查询目标版本失败：GitHub API 请求次数超限（未认证限制 60 次/小时）。\n\
                  请在网络畅通的环境稍等片刻后重试，或前往 GitHub 页面手动下载安装。\n\
@@ -642,19 +728,19 @@ pub async fn install_system_package_release(
     let updater_public_key = updater_public_key_from_config(&app)?;
     verify_manifest_signature(&manifest_bytes, &manifest_sig_bytes, &updater_public_key)?;
     let manifest = parse_system_packages_manifest(&manifest_bytes)?;
-    let manifest_entry =
-        pick_manifest_package_entry(&manifest, package_kind).ok_or_else(|| {
-            format!(
-                "目标版本 {tag} 未在 {SYSTEM_PACKAGE_MANIFEST_ASSET_NAME} 中声明当前架构的 {} 安装包。",
-                target_package_extension(package_kind)
-            )
-        })?;
-    let asset = find_release_asset_by_name(&release.assets, &manifest_entry.name).ok_or_else(|| {
+    let manifest_entry = pick_manifest_package_entry(&manifest, package_kind).ok_or_else(|| {
         format!(
-            "目标版本 {tag} 的系统包清单指向了不存在的资产：{}",
-            manifest_entry.name
+            "目标版本 {tag} 未在 {SYSTEM_PACKAGE_MANIFEST_ASSET_NAME} 中声明当前架构的 {} 安装包。",
+            target_package_extension(package_kind)
         )
     })?;
+    let asset =
+        find_release_asset_by_name(&release.assets, &manifest_entry.name).ok_or_else(|| {
+            format!(
+                "目标版本 {tag} 的系统包清单指向了不存在的资产：{}",
+                manifest_entry.name
+            )
+        })?;
 
     let expected_sha256 = manifest_entry.sha256.trim().to_ascii_lowercase();
     if expected_sha256.len() != 64 || !expected_sha256.chars().all(|ch| ch.is_ascii_hexdigit()) {
@@ -666,7 +752,14 @@ pub async fn install_system_package_release(
 
     let download_path = prepare_download_path(&tag, &sanitize_asset_file_name(&asset.name))?;
 
-    let package_bytes = download_release_asset_bytes(&client, asset).await?;
+    emit_update_progress(&app, "downloading", 0, None);
+    let package_bytes = download_release_asset_bytes_with_progress(&client, asset, {
+        let app = app.clone();
+        move |downloaded_bytes, total_bytes| {
+            emit_update_progress(&app, "downloading", downloaded_bytes, total_bytes);
+        }
+    })
+    .await?;
     let actual_sha256 = sha256_hex(&package_bytes);
     if actual_sha256 != expected_sha256 {
         return Err(format!(
@@ -678,6 +771,12 @@ pub async fn install_system_package_release(
     fs::write(&download_path, &package_bytes)
         .map_err(|error| format!("保存安装包失败：{error}"))?;
 
+    emit_update_progress(
+        &app,
+        "installing",
+        package_bytes.len() as u64,
+        Some(package_bytes.len() as u64),
+    );
     let install_path = download_path.clone();
     tauri::async_runtime::spawn_blocking(move || run_pkexec_install(package_kind, &install_path))
         .await

@@ -302,6 +302,15 @@
   background: rgba(148, 163, 184, 0.12);
 }
 
+:root[data-theme="dark"] .update-progress-pill {
+  background: rgba(17, 21, 29, 0.86);
+  border-color: var(--theme-neutral-border);
+}
+
+:root[data-theme="dark"] .update-progress-track {
+  background: rgba(148, 163, 184, 0.14);
+}
+
 :root[data-theme="dark"] .notice.is-info {
   border-color: var(--theme-info-border);
 }

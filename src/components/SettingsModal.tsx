@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, X } from "lucide-react";
 import type {
   AppSettings,
@@ -91,6 +91,7 @@ export const SettingsModal = memo(function SettingsModal({
   onSwitchSelectedRelease
 }: SettingsModalProps) {
   const [page, setPage] = useState<SettingsPage>("provider");
+  const autoLoadedVersionListRef = useRef(false);
   const demoRuntime = isDemoRuntime();
   const versionSettingsEnabled = !demoRuntime;
 
@@ -110,6 +111,26 @@ export const SettingsModal = memo(function SettingsModal({
     // 每次打开设置，默认落在连接配置页，并收起提示词预览，减少干扰。
     setPage("provider");
   }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      autoLoadedVersionListRef.current = false;
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      page !== "version" ||
+      releaseListLoadedAt ||
+      busyAction ||
+      autoLoadedVersionListRef.current
+    ) {
+      return;
+    }
+    autoLoadedVersionListRef.current = true;
+    onRefreshReleaseVersions();
+  }, [busyAction, onRefreshReleaseVersions, open, page, releaseListLoadedAt]);
 
   useEffect(() => {
     if (versionSettingsEnabled) return;
@@ -233,16 +254,11 @@ export const SettingsModal = memo(function SettingsModal({
                 checkUpdateDisabled={
                   Boolean(busyAction) && busyAction !== "check-update"
                 }
-                refreshReleasesBusy={busyAction === "list-releases"}
-                refreshReleasesDisabled={
-                  Boolean(busyAction) && busyAction !== "list-releases"
-                }
                 switchReleaseBusy={busyAction === "switch-release-version"}
                 switchReleaseDisabled={
                   Boolean(busyAction) && busyAction !== "switch-release-version"
                 }
                 onCheckUpdate={onCheckUpdate}
-                onRefreshReleaseVersions={onRefreshReleaseVersions}
                 onSelectReleaseTag={onSelectReleaseTag}
                 onSwitchSelectedRelease={onSwitchSelectedRelease}
               />

@@ -42,7 +42,8 @@ export const TAURI_EVENTS = {
   REWRITE_PROGRESS: "rewrite_progress",
   REWRITE_UNIT_COMPLETED: "rewrite_unit_completed",
   REWRITE_FINISHED: "rewrite_finished",
-  REWRITE_FAILED: "rewrite_failed"
+  REWRITE_FAILED: "rewrite_failed",
+  UPDATE_PROGRESS: "update_progress"
 } as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {

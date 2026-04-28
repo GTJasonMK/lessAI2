@@ -684,82 +684,42 @@
     linear-gradient(135deg, rgba(23, 68, 207, 0.12), rgba(255, 250, 241, 0.92));
 }
 
-/* ── 更新进度弹窗 ──────────────────────────────────────── */
+/* ── 更新进度条 ────────────────────────────────────────── */
 
-.update-progress-card {
-  width: 420px;
-  max-width: 94vw;
-  padding: 0;
+.update-progress-overlay {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  /* 高于 settings/confirm modal（120）和 toast（130），确保更新进度始终在最前。 */
+  z-index: 150;
+  width: min(260px, calc(100vw - 28px));
+  pointer-events: none;
+}
+
+.update-progress-pill {
+  width: 100%;
+  padding: 3px;
   display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.update-progress-header {
-  padding: 18px 24px 14px;
-  border-bottom: 2px solid rgba(20, 20, 20, 0.12);
-}
-
-.update-progress-header h3 {
-  margin: 0;
-  font-family: "Newsreader", Georgia, serif;
-  font-size: 1.2rem;
-}
-
-.update-progress-body {
-  padding: 28px 24px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.update-progress-spinner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.update-progress-spinner svg {
-  width: 24px;
-  height: 24px;
-  color: var(--blue);
-}
-
-.update-progress-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.update-progress-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 0.96rem;
-}
-
-.update-progress-info svg {
-  width: 20px;
-  height: 20px;
-  color: var(--blue);
+  border: var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--panel-shadow-sm);
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .update-progress-track {
   width: 100%;
-  height: 18px;
-  border: var(--border);
+  height: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(20, 20, 20, 0.12);
   overflow: hidden;
-  box-shadow: var(--panel-shadow-sm);
 }
 
 .update-progress-fill {
+  display: block;
   height: 100%;
   background: var(--blue);
   border-radius: 999px;
@@ -767,21 +727,17 @@
   min-width: 0;
 }
 
-.update-progress-data {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--muted);
+.update-progress-fill.is-indeterminate {
+  width: 42%;
+  animation: update-progress-indeterminate 1.15s ease-in-out infinite;
 }
 
-.update-progress-footer {
-  padding: 14px 24px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  border-top: 2px solid rgba(20, 20, 20, 0.12);
+@keyframes update-progress-indeterminate {
+  0% {
+    transform: translateX(-115%);
+  }
+
+  100% {
+    transform: translateX(255%);
+  }
 }

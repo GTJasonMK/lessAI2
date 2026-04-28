@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpCircle, ChevronDown, GitBranch, ListRestart } from "lucide-react";
+import { ArrowUpCircle, ChevronDown, GitBranch } from "lucide-react";
 import { formatDate } from "../../lib/helpers";
 import type { ReleaseVersionSummary } from "../../lib/types";
 import { ActionButton } from "../ActionButton";
@@ -15,12 +15,9 @@ interface VersionSettingsPageProps {
   switchRequiresUpdaterManifest: boolean;
   checkUpdateBusy: boolean;
   checkUpdateDisabled: boolean;
-  refreshReleasesBusy: boolean;
-  refreshReleasesDisabled: boolean;
   switchReleaseBusy: boolean;
   switchReleaseDisabled: boolean;
   onCheckUpdate: () => void;
-  onRefreshReleaseVersions: () => void;
   onSelectReleaseTag: (tag: string) => void;
   onSwitchSelectedRelease: () => void;
 }
@@ -42,12 +39,9 @@ export const VersionSettingsPage = memo(function VersionSettingsPage({
   switchRequiresUpdaterManifest,
   checkUpdateBusy,
   checkUpdateDisabled,
-  refreshReleasesBusy,
-  refreshReleasesDisabled,
   switchReleaseBusy,
   switchReleaseDisabled,
   onCheckUpdate,
-  onRefreshReleaseVersions,
   onSelectReleaseTag,
   onSwitchSelectedRelease
 }: VersionSettingsPageProps) {
@@ -78,7 +72,7 @@ export const VersionSettingsPage = memo(function VersionSettingsPage({
   const selectedLabel =
     selectedRelease != null
       ? formatOptionLabel(selectedRelease)
-      : "请先刷新版本列表";
+      : "打开版本页后会自动加载";
 
   return (
     <div className="settings-page">
@@ -150,7 +144,7 @@ export const VersionSettingsPage = memo(function VersionSettingsPage({
           </span>
         ) : null}
         <span className="workspace-hint">
-          版本列表刷新 / 检查更新 / 版本切换都会读取"模型与接口"页配置的网络代理。
+          检查更新会同步刷新版本列表；版本切换会读取"模型与接口"页配置的网络代理。
         </span>
         <div className="settings-page-actions">
           <ActionButton
@@ -159,14 +153,6 @@ export const VersionSettingsPage = memo(function VersionSettingsPage({
             busy={checkUpdateBusy}
             disabled={checkUpdateDisabled}
             onClick={onCheckUpdate}
-            variant="secondary"
-          />
-          <ActionButton
-            icon={ListRestart}
-            label="刷新版本列表"
-            busy={refreshReleasesBusy}
-            disabled={refreshReleasesDisabled}
-            onClick={onRefreshReleaseVersions}
             variant="secondary"
           />
           <ActionButton
