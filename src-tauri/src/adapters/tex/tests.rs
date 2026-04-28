@@ -94,12 +94,18 @@ fn marks_href_as_skip_rewrite() {
 }
 
 #[test]
-fn marks_texttt_as_skip_rewrite() {
+fn keeps_texttt_argument_editable_as_formatted_text() {
     let text = "命令 \\texttt{cargo fmt --check} 示例。";
     let regions = TexAdapter::parse_regions(text, false);
     assert!(regions
         .iter()
-        .any(|region| region.skip_rewrite && region.body.contains("\\texttt{cargo fmt --check}")));
+        .any(|region| region.skip_rewrite && region.body.contains("\\texttt{")));
+    assert!(regions
+        .iter()
+        .any(|region| !region.skip_rewrite && region.body.contains("cargo fmt --check")));
+    assert!(regions
+        .iter()
+        .any(|region| region.skip_rewrite && region.body.contains('}')));
     let rebuilt = regions
         .iter()
         .map(|region| region.body.as_str())

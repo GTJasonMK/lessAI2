@@ -129,7 +129,7 @@ fn extracts_hyperlink_display_text_with_target_presentation() {
 }
 
 #[test]
-fn locks_bare_urls_inside_plain_docx_runs() {
+fn keeps_bare_urls_inside_plain_docx_runs_editable() {
     let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
@@ -150,16 +150,15 @@ fn locks_bare_urls_inside_plain_docx_runs() {
 
     assert_eq!(
         parts,
-        vec![
-            ("访问 ", false),
-            ("https://chat.deepseek.com/share/lzlvnjcj3o5uees841", true),
-            (" 查看答案", false),
-        ]
+        vec![(
+            "访问 https://chat.deepseek.com/share/lzlvnjcj3o5uees841 查看答案",
+            false
+        )]
     );
 }
 
 #[test]
-fn keeps_url_with_trailing_space_as_one_locked_region() {
+fn keeps_url_with_trailing_space_as_one_editable_region() {
     let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
@@ -180,7 +179,7 @@ fn keeps_url_with_trailing_space_as_one_locked_region() {
 
     assert_eq!(
         parts,
-        vec![("https://chat.deepseek.com/share/lzlvnjcj3o5uees841 ", true)]
+        vec![("https://chat.deepseek.com/share/lzlvnjcj3o5uees841 ", false)]
     );
 }
 

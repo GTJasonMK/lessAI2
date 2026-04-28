@@ -411,7 +411,7 @@ fn report_template_keeps_first_heading_numbered_as_chapter_one() {
 }
 
 #[test]
-fn imports_underlined_blank_runs_as_locked_underlined_text() {
+fn imports_underlined_blank_runs_as_editable_underlined_text() {
     let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
@@ -438,13 +438,13 @@ fn imports_underlined_blank_runs_as_locked_underlined_text() {
         .expect("underlined blank presentation");
 
     assert_eq!(rebuilt, "填写日期：　　　　");
-    assert!(blank_region.skip_rewrite);
+    assert!(!blank_region.skip_rewrite);
     assert!(presentation.underline);
     assert_eq!(presentation.protect_kind.as_deref(), None);
 }
 
 #[test]
-fn splits_underlined_run_edge_whitespace_into_locked_regions() {
+fn keeps_underlined_run_edge_whitespace_editable() {
     let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
@@ -473,14 +473,11 @@ fn splits_underlined_run_edge_whitespace_into_locked_regions() {
         .collect::<Vec<_>>();
 
     assert_eq!(rebuilt, "作品编号：　　ABC123　　　");
-    assert_eq!(
-        underlined_regions,
-        vec![("　　", true), ("ABC123", false), ("　　　", true)]
-    );
+    assert_eq!(underlined_regions, vec![("　　ABC123　　　", false)]);
 }
 
 #[test]
-fn writes_back_underlined_run_with_locked_edge_whitespace() {
+fn writes_back_underlined_run_with_editable_edge_whitespace() {
     let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
@@ -498,9 +495,9 @@ fn writes_back_underlined_run_with_locked_edge_whitespace() {
     let mut regions = DocxAdapter::extract_writeback_regions(&bytes).expect("extract regions");
     let editable_region = regions
         .iter_mut()
-        .find(|region| !region.skip_rewrite && region.body == "ABC123")
+        .find(|region| !region.skip_rewrite && region.body == "　　ABC123　　　")
         .expect("editable fill content");
-    editable_region.body = "ZX-9".to_string();
+    editable_region.body = "　　ZX-9　　　".to_string();
 
     let rewritten = DocxAdapter::write_updated_regions(&bytes, &source, &regions)
         .expect("write updated regions");
@@ -516,9 +513,5 @@ fn writes_back_underlined_run_with_locked_edge_whitespace() {
         .map(|region| (region.body.as_str(), region.skip_rewrite))
         .collect::<Vec<_>>();
 
-    assert_eq!(
-        underlined_regions,
-        vec![("　　", true), ("ZX-9", false), ("　　　", true)]
-    );
+    assert_eq!(underlined_regions, vec![("　　ZX-9　　　", false)]);
 }
-

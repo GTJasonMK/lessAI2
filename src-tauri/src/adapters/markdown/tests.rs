@@ -177,6 +177,25 @@ fn leaves_unmatched_or_space_padded_markers_editable() {
 }
 
 #[test]
+fn keeps_bare_urls_editable_as_paragraph_text() {
+    let text = "查看 https://example.com/report/final 和 www.example.org。\n";
+    let template = MarkdownAdapter::build_template(text, false);
+    let built = build_slots(&template);
+
+    for expected in ["https://example.com/report/final", "www.example.org"] {
+        let slot = built
+            .slots
+            .iter()
+            .find(|slot| slot.text.contains(expected))
+            .unwrap_or_else(|| panic!("missing bare URL text: {expected}"));
+        assert!(
+            slot.editable,
+            "expected bare URL text to stay editable: {expected}"
+        );
+    }
+}
+
+#[test]
 fn keeps_link_label_atomic_when_building_slots() {
     let template =
         MarkdownAdapter::build_template("[第一句，第二句](https://example.com)\n", false);

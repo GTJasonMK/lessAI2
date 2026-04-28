@@ -227,7 +227,6 @@ fn load_markdown_source_protects_mixed_inline_structures_without_locking_prose()
         "$f(x)=x^2$",
         "[@ref-demo]",
         "[^note1]",
-        "https://example.com/report/final",
     ] {
         let slot = loaded
             .writeback_slots
@@ -243,6 +242,7 @@ fn load_markdown_source_protects_mixed_inline_structures_without_locking_prose()
     for editable in [
         "这一整段故意写得比较长",
         "English phrases",
+        "https://example.com/report/final",
         "段落模式应优先保证整体可读",
         "任何模式都不应吞掉 Markdown 语法",
     ] {

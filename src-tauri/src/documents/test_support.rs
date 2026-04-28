@@ -47,7 +47,7 @@ fn build_writeback_slot(
 ) -> WritebackSlot {
     let text_empty = text.is_empty();
     let whitespace_only = !text.is_empty() && text.chars().all(|ch| ch.is_whitespace());
-    let editable = !region.skip_rewrite && !whitespace_only && !text_empty;
+    let editable = !region.skip_rewrite && !text_empty;
 
     WritebackSlot {
         id: format!("slot-{index}"),
@@ -80,7 +80,7 @@ fn slot_role(
     if editable {
         return region.role.clone();
     }
-    if whitespace_only && region.role == WritebackSlotRole::EditableText {
+    if region.skip_rewrite && whitespace_only && region.role == WritebackSlotRole::EditableText {
         return WritebackSlotRole::LockedText;
     }
     region.role.clone()

@@ -30,6 +30,13 @@ const TEXT_COMMANDS: &[&str] = &[
     "textrm",
     "textsf",
     "textsc",
+    "texttt",
+    "textnormal",
+    "textsl",
+    "textup",
+    "textmd",
+    "textsuperscript",
+    "textsubscript",
 ];
 const LINK_TEXT_COMMANDS: &[&str] = &["href"];
 

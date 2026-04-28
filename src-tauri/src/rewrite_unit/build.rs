@@ -48,7 +48,7 @@ pub(crate) fn build_rewrite_units(
 }
 
 fn should_skip_unit(current: &[&WritebackSlot]) -> bool {
-    is_standalone_separator_unit(current) || is_blank_locked_unit(current)
+    is_standalone_separator_unit(current) || is_blank_only_unit(current)
 }
 
 fn build_unit(order: usize, preset: SegmentationPreset, slots: &[&WritebackSlot]) -> RewriteUnit {
@@ -102,8 +102,8 @@ fn is_standalone_separator_unit(current: &[&WritebackSlot]) -> bool {
         && current[0].text.is_empty()
 }
 
-fn is_blank_locked_unit(current: &[&WritebackSlot]) -> bool {
-    current.iter().all(|slot| !slot.editable) && display_text(current).trim().is_empty()
+fn is_blank_only_unit(current: &[&WritebackSlot]) -> bool {
+    display_text(current).trim().is_empty()
 }
 
 fn merge_short_units(groups: &mut Vec<Vec<&WritebackSlot>>, min_chars: usize) {
@@ -210,8 +210,8 @@ mod tests {
     }
 
     #[test]
-    fn paragraph_builder_skips_blank_locked_whitespace_unit() {
-        let mut blank = WritebackSlot::locked("slot-1", 0, "　　");
+    fn paragraph_builder_skips_blank_whitespace_unit_even_when_editable() {
+        let mut blank = WritebackSlot::editable("slot-1", 0, "　　");
         blank.separator_after = "\n\n".to_string();
         let next = WritebackSlot::editable("slot-2", 1, "正文开始");
 

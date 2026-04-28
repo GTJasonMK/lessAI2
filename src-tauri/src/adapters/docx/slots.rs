@@ -101,7 +101,7 @@ fn build_paragraph_slots(
 
         let split_count = fragments.len();
         for (fragment_index, fragment) in fragments.into_iter().enumerate() {
-            let slot_editable = editable && text_has_visible_content(&fragment.text);
+            let slot_editable = editable && !fragment.text.is_empty();
             slots.push(WritebackSlot {
                 id: slot_id(&anchor, fragment_index, split_count),
                 order: start_order + slots.len(),

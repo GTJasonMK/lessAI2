@@ -188,9 +188,6 @@ fn protected_markdown_region(text: &str) -> TextRegion {
         || text.starts_with('$')
         || text.starts_with("![")
         || text.starts_with('[')
-        || text.starts_with("http://")
-        || text.starts_with("https://")
-        || text.starts_with("www.")
     {
         return TextRegion::inline_object(text);
     }

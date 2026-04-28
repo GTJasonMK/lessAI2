@@ -32,7 +32,7 @@ fn writeback_slots_split_preserved_block_separator_from_region_body() {
 }
 
 #[test]
-fn writeback_slots_lock_whitespace_only_regions_even_when_region_is_editable() {
+fn writeback_slots_keep_whitespace_only_regions_editable_when_region_is_editable() {
     let underline = Some(TextPresentation {
         bold: false,
         italic: false,
@@ -48,7 +48,7 @@ fn writeback_slots_lock_whitespace_only_regions_even_when_region_is_editable() {
     assert_eq!(slots.len(), 1);
     assert_eq!(slots[0].text, "　　　");
     assert_eq!(slots[0].separator_after, "\n\n");
-    assert!(!slots[0].editable);
+    assert!(slots[0].editable);
     assert_eq!(slots[0].presentation, underline);
 }
 
