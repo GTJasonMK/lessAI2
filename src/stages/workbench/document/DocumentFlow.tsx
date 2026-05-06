@@ -1,9 +1,14 @@
-import { memo, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
+import { normalizeNewlines } from "../../../lib/helpers";
 import { countSelectedRewriteUnits } from "../../../lib/rewriteUnitSelection";
 import { ParagraphDocumentFlow } from "./ParagraphDocumentFlow";
 import { SelectionDecorationOverlay } from "./SelectionDecorationOverlay";
 import type { DocumentFlowBodyProps } from "./documentFlowShared";
-import { useSelectionDecorationRects } from "./useSelectionDecorationRects";
+import {
+  resolveContainedSelectionDecorationRange,
+  type SelectionDecorationContext,
+  useSelectionDecorationRects
+} from "./useSelectionDecorationRects";
 
 interface DocumentFlowProps extends DocumentFlowBodyProps {
   sessionId: string;
@@ -47,16 +52,46 @@ export const DocumentFlow = memo(function DocumentFlow({
   activeSuggestionId,
   activeReviewNavigationRequestId,
   selectedRewriteUnitIds,
+  onSelectionTextChange,
   onSelectRewriteUnit,
   onSelectSuggestion
 }: DocumentFlowProps) {
   const selectedDisplayCount = countSelectedRewriteUnits(selectedRewriteUnitIds);
+  const hasDetectionResult = Boolean(session.detectionResult);
   const flowRootRef = useRef<HTMLParagraphElement | null>(null);
+  const selectionTextRef = useRef("");
+  const updateSelectionText = useCallback(
+    (value: string) => {
+      if (selectionTextRef.current === value) return;
+      selectionTextRef.current = value;
+      onSelectionTextChange?.(value);
+    },
+    [onSelectionTextChange]
+  );
+  const resolveSelectionDecorationRange = useCallback(
+    (context: SelectionDecorationContext<HTMLParagraphElement>) => {
+      const range = resolveContainedSelectionDecorationRange(context);
+      const text = range ? normalizeNewlines(context.selection?.toString() ?? "") : "";
+      updateSelectionText(text);
+      return range;
+    },
+    [updateSelectionText]
+  );
   const {
     selectionDecorationRects,
-    clearSelectionDecoration,
+    clearSelectionDecoration: clearSelectionDecorationBase,
     scheduleSelectionStateSync
-  } = useSelectionDecorationRects({ rootRef: flowRootRef });
+  } = useSelectionDecorationRects({
+    rootRef: flowRootRef,
+    resolveRange: resolveSelectionDecorationRange
+  });
+
+  const clearSelectionDecoration = useCallback(() => {
+    clearSelectionDecorationBase();
+    updateSelectionText("");
+  }, [clearSelectionDecorationBase, updateSelectionText]);
+
+  useEffect(() => () => onSelectionTextChange?.(""), [onSelectionTextChange]);
 
   return (
     <div className={buildWrapClassName(showMarkers, selectedDisplayCount)}>
@@ -85,6 +120,19 @@ export const DocumentFlow = memo(function DocumentFlow({
           <span className="legend-chip is-running" title="正在生成候选稿">
             正在改写
           </span>
+          {hasDetectionResult ? (
+            <>
+              <span className="legend-chip is-detect-low" title="AI 检测低风险（0-39%）">
+                低 AI
+              </span>
+              <span className="legend-chip is-detect-medium" title="AI 检测中风险（40-69%）">
+                中 AI
+              </span>
+              <span className="legend-chip is-detect-high" title="AI 检测高风险（70-100%）">
+                高 AI
+              </span>
+            </>
+          ) : null}
           {documentView === "markup" ? (
             <>
               <span className="legend-chip is-insert" title="候选稿相对原文的插入内容">
@@ -123,6 +171,7 @@ export const DocumentFlow = memo(function DocumentFlow({
             activeSuggestionId={activeSuggestionId}
             activeReviewNavigationRequestId={activeReviewNavigationRequestId}
             selectedRewriteUnitIds={selectedRewriteUnitIds}
+            onSelectionTextChange={onSelectionTextChange}
             onSelectRewriteUnit={onSelectRewriteUnit}
             onSelectSuggestion={onSelectSuggestion}
           />

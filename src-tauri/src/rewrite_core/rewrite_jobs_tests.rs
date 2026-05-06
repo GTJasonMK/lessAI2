@@ -34,6 +34,7 @@ fn session_with_slots_and_units(slots: Vec<WritebackSlot>) -> DocumentSession {
         rewrite_units: build_rewrite_units(&slots, SegmentationPreset::Paragraph),
         writeback_slots: slots,
         suggestions: Vec::new(),
+        detection_result: None,
         next_suggestion_sequence: 1,
         status: RunningState::Idle,
         created_at: now,

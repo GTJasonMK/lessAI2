@@ -43,6 +43,7 @@ interface DocumentPanelProps {
   activeSuggestionId: string | null;
   activeReviewNavigationRequestId: number;
   selectedRewriteUnitIds: string[];
+  documentSelectionText: string;
   busyAction: string | null;
   editorMode: boolean;
   editorText: string;
@@ -65,12 +66,16 @@ interface DocumentPanelProps {
   onChangeEditorText: (value: string) => void;
   onChangeEditorSlotText: (slotId: string, value: string) => void;
   onChangeEditorHasSelection: (value: boolean) => void;
+  onDocumentSelectionTextChange: (value: string) => void;
   onSaveEditor: () => void;
   onSaveEditorAndExit: () => void;
   onDiscardEditorChanges: () => void;
   onExitEditor: () => void;
   onToggleMarkers: () => void;
   onRewriteSelection: () => void;
+  detectionSettingsReady: boolean;
+  onStartDetection: () => void;
+  onDetectSelection: () => void;
 }
 
 export const DocumentPanel = memo(function DocumentPanel({
@@ -86,6 +91,7 @@ export const DocumentPanel = memo(function DocumentPanel({
   activeSuggestionId,
   activeReviewNavigationRequestId,
   selectedRewriteUnitIds,
+  documentSelectionText,
   busyAction,
   editorMode,
   editorText,
@@ -108,12 +114,16 @@ export const DocumentPanel = memo(function DocumentPanel({
   onChangeEditorText,
   onChangeEditorSlotText,
   onChangeEditorHasSelection,
+  onDocumentSelectionTextChange,
   onSaveEditor,
   onSaveEditorAndExit,
   onDiscardEditorChanges,
   onExitEditor,
   onToggleMarkers,
-  onRewriteSelection
+  onRewriteSelection,
+  detectionSettingsReady,
+  onStartDetection,
+  onDetectSelection
 }: DocumentPanelProps) {
   const [documentView, setDocumentView] = useState<DocumentView>("markup");
   const flowScrollRef = useRef<HTMLDivElement | null>(null);
@@ -133,6 +143,8 @@ export const DocumentPanel = memo(function DocumentPanel({
   const resetBusy = busyAction === "reset-session";
   const saveAndExitBusy = busyAction === "save-edits-and-back";
   const rewriteSelectionBusy = busyAction === "rewrite-selection";
+  const startDetectionBusy = busyAction === "start-detection";
+  const detectSelectionBusy = busyAction === "detect-selection";
 
   const showCancelAction = rewriteRunning || rewritePaused;
   const hasAppliedEdits = Boolean(currentStats && currentStats.suggestionsApplied > 0);
@@ -330,6 +342,51 @@ export const DocumentPanel = memo(function DocumentPanel({
         ? "对当前选区执行降 AIGC 处理"
         : "请先在正文中选中需要处理的文本";
 
+  const canDetectDocument = Boolean(
+    currentSession &&
+      !editorMode &&
+      detectionSettingsReady &&
+      !rewriteRunning &&
+      !rewritePaused
+  );
+  const startDetectionDisabled =
+    editorMode ||
+    !canDetectDocument ||
+    startDetectionBusy ||
+    (anyBusy && busyAction !== "start-detection");
+  const startDetectionTitle = editorMode
+    ? "全文检测请先返回工作台"
+    : !currentSession
+      ? "请先打开一个文档"
+      : !detectionSettingsReady
+        ? "请先在设置中启用并填写 AI 检测接口"
+        : rewriteRunning || rewritePaused
+          ? "请先取消或等待当前自动任务完成"
+          : startDetectionBusy
+            ? "正在检测全文…"
+            : "检测全文 AI 生成概率";
+
+  const hasSelectionForDetection = editorMode
+    ? editorHasSelection
+    : documentSelectionText.trim().length > 0;
+  const detectSelectionDisabled =
+    !currentSession ||
+    !detectionSettingsReady ||
+    !hasSelectionForDetection ||
+    rewriteRunning ||
+    rewritePaused ||
+    detectSelectionBusy ||
+    (anyBusy && busyAction !== "detect-selection");
+  const detectSelectionTitle = !currentSession
+    ? "请先打开一个文档"
+    : !detectionSettingsReady
+      ? "请先在设置中启用并填写 AI 检测接口"
+      : rewriteRunning || rewritePaused
+        ? "请先取消或等待当前自动任务完成"
+        : hasSelectionForDetection
+          ? "检测当前选区 AI 生成概率"
+          : "请先在正文中选中需要检测的文本";
+
   const handleCopy = useCallback(() => {
     void handleCopyDocument();
   }, [handleCopyDocument]);
@@ -397,6 +454,14 @@ export const DocumentPanel = memo(function DocumentPanel({
             rewriteSelectionDisabled={rewriteSelectionDisabled}
             rewriteSelectionTitle={rewriteSelectionTitle}
             onRewriteSelection={onRewriteSelection}
+            startDetectionBusy={startDetectionBusy}
+            startDetectionDisabled={startDetectionDisabled}
+            startDetectionTitle={startDetectionTitle}
+            onStartDetection={onStartDetection}
+            detectSelectionBusy={detectSelectionBusy}
+            detectSelectionDisabled={detectSelectionDisabled}
+            detectSelectionTitle={detectSelectionTitle}
+            onDetectSelection={onDetectSelection}
           />
         ) : null
       }
@@ -432,6 +497,7 @@ export const DocumentPanel = memo(function DocumentPanel({
                         activeSuggestionId={activeSuggestionId}
                         activeReviewNavigationRequestId={activeReviewNavigationRequestId}
                         selectedRewriteUnitIds={selectedRewriteUnitIds}
+                        onSelectionTextChange={onDocumentSelectionTextChange}
                         onSelectRewriteUnit={onSelectRewriteUnit}
                         onSelectSuggestion={onSelectSuggestion}
                       />

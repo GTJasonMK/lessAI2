@@ -13,10 +13,20 @@ interface ProviderSettingsPageProps {
   testProviderBusy: boolean;
   testProviderDisabled: boolean;
   onTestProvider: () => void;
-  onUpdateStringSetting: <K extends "baseUrl" | "apiKey" | "model" | "updateProxy">(
+  onUpdateStringSetting: <
+    K extends
+      | "baseUrl"
+      | "apiKey"
+      | "model"
+      | "detectionBaseUrl"
+      | "detectionApiKey"
+      | "detectionModel"
+      | "updateProxy"
+  >(
     key: K,
     value: string
   ) => void;
+  onUpdateBooleanSetting: <K extends "detectionEnabled">(key: K, value: boolean) => void;
   onUpdateNumberSetting: (
     key: "timeoutMs" | "temperature" | "maxConcurrency" | "unitsPerBatch",
     value: string
@@ -32,6 +42,7 @@ export const ProviderSettingsPage = memo(function ProviderSettingsPage({
   testProviderDisabled,
   onTestProvider,
   onUpdateStringSetting,
+  onUpdateBooleanSetting,
   onUpdateNumberSetting
 }: ProviderSettingsPageProps) {
   return (
@@ -90,6 +101,59 @@ export const ProviderSettingsPage = memo(function ProviderSettingsPage({
           onClick={onTestProvider}
           variant="secondary"
         />
+      </div>
+
+      <div className="field-block">
+        <div className="field-line">
+          <span>AI 检测接口</span>
+          <strong>{settings.detectionEnabled ? "已启用" : "未启用"}</strong>
+        </div>
+        <label className="field-check">
+          <input
+            type="checkbox"
+            checked={settings.detectionEnabled}
+            onChange={(event) =>
+              onUpdateBooleanSetting("detectionEnabled", event.target.checked)
+            }
+          />
+          <span>启用独立 AI 检测 API</span>
+        </label>
+        <div className="field-grid">
+          <label className="field">
+            <span>检测 Base URL</span>
+            <input
+              value={settings.detectionBaseUrl}
+              onChange={(event) =>
+                onUpdateStringSetting("detectionBaseUrl", event.target.value)
+              }
+              placeholder="https://api.deepseek.com/v1"
+            />
+          </label>
+          <label className="field">
+            <span>检测 API Key</span>
+            <input
+              type="password"
+              value={settings.detectionApiKey}
+              onChange={(event) =>
+                onUpdateStringSetting("detectionApiKey", event.target.value)
+              }
+              placeholder="sk-..."
+            />
+          </label>
+          <label className="field">
+            <span>检测 Model</span>
+            <input
+              value={settings.detectionModel}
+              onChange={(event) =>
+                onUpdateStringSetting("detectionModel", event.target.value)
+              }
+              placeholder="deepseek-v4-flash"
+            />
+          </label>
+        </div>
+        <span className="workspace-hint">
+          检测配置独立于改写模型；检测结果以 0-100 的 AI 概率展示。
+        </span>
       </div>
 
       <div className="field-block">

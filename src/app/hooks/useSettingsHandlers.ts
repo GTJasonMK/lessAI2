@@ -33,13 +33,31 @@ export function useSettingsHandlers(options: {
   } = options;
 
   const handleUpdateStringSetting = useCallback(
-    (key: "baseUrl" | "apiKey" | "model" | "updateProxy", value: string) => {
+    (
+      key:
+        | "baseUrl"
+        | "apiKey"
+        | "model"
+        | "detectionBaseUrl"
+        | "detectionApiKey"
+        | "detectionModel"
+        | "updateProxy",
+      value: string
+    ) => {
       if (isDemoRuntime() && key === "updateProxy") {
         return;
       }
       if (key !== "updateProxy") {
         setProviderStatus(null);
       }
+      setSettings((current) => ({ ...current, [key]: value }));
+    },
+    [setProviderStatus, setSettings]
+  );
+
+  const handleUpdateBooleanSetting = useCallback(
+    (key: "detectionEnabled", value: boolean) => {
+      setProviderStatus(null);
       setSettings((current) => ({ ...current, [key]: value }));
     },
     [setProviderStatus, setSettings]
@@ -205,6 +223,7 @@ export function useSettingsHandlers(options: {
 
   return {
     handleUpdateStringSetting,
+    handleUpdateBooleanSetting,
     handleUpdateNumberSetting,
     handleUpdateSegmentationPreset,
     handleUpdateRewriteHeadings,

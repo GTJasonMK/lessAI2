@@ -52,6 +52,10 @@ export const SuggestionReviewPane = memo(function SuggestionReviewPane({
     initial: 180,
     step: 220
   });
+  const visibleSuggestions = useMemo(
+    () => orderedSuggestions.slice(0, renderedSuggestionCount),
+    [orderedSuggestions, renderedSuggestionCount]
+  );
   const failedRewriteUnitIds = useMemo(
     () =>
       new Set(
@@ -65,7 +69,7 @@ export const SuggestionReviewPane = memo(function SuggestionReviewPane({
   const suggestionActionStates = useMemo(
     () =>
       new Map(
-        orderedSuggestions.map((suggestion) => [
+        visibleSuggestions.map((suggestion) => [
           suggestion.id,
           buildSuggestionRowActionState({
             suggestionId: suggestion.id,
@@ -81,7 +85,7 @@ export const SuggestionReviewPane = memo(function SuggestionReviewPane({
         ])
       ),
     [
-      orderedSuggestions,
+      visibleSuggestions,
       busyAction,
       anyBusy,
       rewriteRunning,
@@ -104,7 +108,7 @@ export const SuggestionReviewPane = memo(function SuggestionReviewPane({
         onToggleMenu: () => void;
       }
     >();
-    for (const suggestion of orderedSuggestions) {
+    for (const suggestion of visibleSuggestions) {
       map.set(suggestion.id, {
         onSelect: () => {
           logScrollRestore("review-row-select", {
@@ -142,7 +146,7 @@ export const SuggestionReviewPane = memo(function SuggestionReviewPane({
     }
     return map;
   }, [
-    orderedSuggestions,
+    visibleSuggestions,
     currentSession.id,
     activeSuggestionId,
     activeRewriteUnit,
@@ -198,7 +202,7 @@ export const SuggestionReviewPane = memo(function SuggestionReviewPane({
         </div>
       ) : (
         <div className="suggestion-list scroll-region">
-          {orderedSuggestions.slice(0, renderedSuggestionCount).map((suggestion) => (
+          {visibleSuggestions.map((suggestion) => (
             <ReviewSuggestionRow
               key={suggestion.id}
               suggestion={suggestion}

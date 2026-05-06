@@ -26,6 +26,7 @@ export interface DocumentFlowBodyProps {
   activeSuggestionId: string | null;
   activeReviewNavigationRequestId: number;
   selectedRewriteUnitIds: string[];
+  onSelectionTextChange?: (value: string) => void;
   onSelectRewriteUnit: (rewriteUnitId: string, options?: { multiSelect?: boolean }) => void;
   onSelectSuggestion: (suggestionId: string, options?: { forceScroll?: boolean }) => void;
 }

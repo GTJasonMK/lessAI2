@@ -192,6 +192,7 @@ const workbenchStage = read("src/stages/WorkbenchStage.tsx");
 const reviewPanel = read("src/stages/workbench/ReviewPanel.tsx");
 const reviewActionBar = read("src/stages/workbench/review/ReviewActionBar.tsx");
 const reviewEmptyState = read("src/stages/workbench/review/ReviewEmptyState.tsx");
+const detectionReviewPane = read("src/stages/workbench/review/DetectionReviewPane.tsx");
 const suggestionReviewPane = read("src/stages/workbench/review/SuggestionReviewPane.tsx");
 const reviewSuggestionRow = read("src/stages/workbench/review/ReviewSuggestionRow.tsx");
 const progressiveRevealHook = read("src/stages/workbench/hooks/useProgressiveRevealCount.ts");
@@ -330,7 +331,8 @@ assertIncludes(editorSaveShortcut, "export function useEditorSaveShortcut");
 assertIncludes(plainTextDocumentEditor, "useEditorSaveShortcut({ busy, dirty, onSave });");
 assertIncludes(structuredSlotEditor, "useEditorSaveShortcut({ busy, dirty, onSave });");
 assertIncludes(selectionDecorationHook, "export function useSelectionDecorationRects");
-assertIncludes(documentFlow, "useSelectionDecorationRects({ rootRef: flowRootRef })");
+assertIncludes(documentFlow, "rootRef: flowRootRef");
+assertIncludes(documentFlow, "resolveRange: resolveSelectionDecorationRange");
 assertIncludes(plainTextDocumentEditor, "useSelectionDecorationRects({");
 assertIncludes(structuredSlotEditor, "useSelectionDecorationRects({");
 assertNotIncludes(documentFlow, 'document.addEventListener("selectionchange"');
@@ -386,8 +388,13 @@ assertNotIncludes(
 );
 assertIncludes(
   structuredSlotEditor,
-  "session.rewriteUnits.map((rewriteUnit) => {",
+  "visibleRewriteUnits.map((rewriteUnit) => (",
   "结构化编辑页应与主页面一致，按 rewrite unit 作为展示分组骨架"
+);
+assertIncludes(
+  structuredSlotEditor,
+  "session.rewriteUnits.slice(0, renderedUnitCount)",
+  "结构化编辑页应只遍历当前可见 rewrite unit，避免大文档渐进渲染时全量扫描"
 );
 assertIncludes(
   structuredSlotEditor,
@@ -673,9 +680,12 @@ assertIncludes(documentFinalizeActions, "const preservedScrollTop = captureDocum
 assertIncludes(documentFinalizeActions, "restoreLoadedSessionWithScroll({");
 assertIncludes(appSource, 'import { useDocumentScrollRestore } from "./app/hooks/useDocumentScrollRestore";');
 assertIncludes(appSource, "const { documentScrollRef, captureDocumentScrollPosition, restoreDocumentScrollPosition } =");
-assertIncludes(reviewPanel, 'title="建议"');
-assertIncludes(reviewPanel, 'subtitle="建议列表"');
-assertNotIncludes(reviewPanel, 'title="审阅"');
+assertIncludes(reviewPanel, 'title="审阅"');
+assertIncludes(reviewPanel, 'AI 检测');
+assertIncludes(reviewPanel, "reviewPane === \"detection\"");
+assertIncludes(detectionReviewPane, "export const DetectionReviewPane");
+assertIncludes(detectionReviewPane, "检测全文");
+assertIncludes(detectionReviewPane, "检测选区");
 assertIncludes(suggestionReviewPane, 'className="review-summary-strip"');
 assertNotIncludes(suggestionReviewPane, '当前 #{');
 assertIncludes(suggestionReviewPane, "待处理：{currentStats.unitsProposed}");

@@ -7,6 +7,12 @@ import {
   rewriteUnitHasEditableSlot,
   summarizeRewriteUnitSuggestions
 } from "../../../lib/helpers";
+import {
+  buildDetectionScoreByRewriteUnit,
+  detectionRiskLabel,
+  detectionRiskLevel,
+  formatDetectionScore
+} from "../../../lib/detection";
 import { isRewriteUnitSelected } from "../../../lib/rewriteUnitSelection";
 import type { DocumentFlowBodyProps } from "./documentFlowShared";
 import {
@@ -31,8 +37,11 @@ function buildRewriteUnitClassNames(
   isFailed: boolean,
   hasAppliedSuggestion: boolean,
   hasProposedSuggestion: boolean,
-  documentView: DocumentFlowBodyProps["documentView"]
+  documentView: DocumentFlowBodyProps["documentView"],
+  detectionScore: number | null
 ) {
+  const detectionClassName =
+    detectionScore == null ? "" : `is-detect-${detectionRiskLevel(detectionScore)}`;
   return [
     "doc-unit",
     "doc-paragraph-unit",
@@ -44,10 +53,21 @@ function buildRewriteUnitClassNames(
     documentView === "markup" && hasAppliedSuggestion ? "is-applied" : "",
     documentView === "markup" && !hasAppliedSuggestion && hasProposedSuggestion
       ? "is-proposed"
-      : ""
+      : "",
+    detectionClassName
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function rewriteUnitTitleWithDetection(
+  baseTitle: string,
+  detectionScore: number | null
+) {
+  if (detectionScore == null) return baseTitle;
+  return `${baseTitle}；AI 检测：${formatDetectionScore(detectionScore)}（${detectionRiskLabel(
+    detectionScore
+  )}）`;
 }
 
 function snapshotRewriteUnitNode(node: HTMLSpanElement | null) {
@@ -177,13 +197,22 @@ export const ParagraphDocumentFlow = memo(function ParagraphDocumentFlow({
     });
   }, [activeRewriteUnitId, activeReviewNavigationRequestId, activeSuggestionId, sessionId]);
 
-  // 第一层：计算全部单元的元数据（不含 renderedUnitCount 依赖，避免渐进揭示时每帧 O(N) 重算）
-  const unitMeta = useMemo(
+  const visibleRewriteUnits = useMemo(
+    () => rewriteUnits.slice(0, renderedUnitCount),
+    [renderedUnitCount, rewriteUnits]
+  );
+  const detectionScoresByRewriteUnit = useMemo(
+    () => buildDetectionScoreByRewriteUnit(session.detectionResult),
+    [session.detectionResult]
+  );
+
+  const visibleUnitMeta = useMemo(
     () =>
-      rewriteUnits.map((rewriteUnit) => {
+      visibleRewriteUnits.map((rewriteUnit) => {
         const unitSuggestions = suggestionsByRewriteUnit.get(rewriteUnit.id) ?? [];
         const summary = summarizeRewriteUnitSuggestions(unitSuggestions);
         const displaySuggestion = summary.applied ?? summary.proposed ?? null;
+        const detectionScore = detectionScoresByRewriteUnit.get(rewriteUnit.id) ?? null;
         const isRunning =
           rewriteUnit.status === "running" ||
           runningRewriteUnitIdSet.has(rewriteUnit.id) ||
@@ -202,26 +231,23 @@ export const ParagraphDocumentFlow = memo(function ParagraphDocumentFlow({
             rewriteUnit.status === "failed",
             Boolean(summary.applied),
             Boolean(summary.proposed),
-            documentView
-          )
+            documentView,
+            detectionScore
+          ),
+          detectionScore
         };
       }),
     [
       activeRewriteUnitId,
+      detectionScoresByRewriteUnit,
       documentView,
       optimisticManualRunningRewriteUnitId,
-      rewriteUnits,
       runningRewriteUnitIdSet,
       selectedRewriteUnitIds,
       session,
-      suggestionsByRewriteUnit
+      suggestionsByRewriteUnit,
+      visibleRewriteUnits
     ]
-  );
-
-  // 第二层：截取渐进揭示的可见范围（仅 renderedUnitCount 变更时重新切片，O(1)）
-  const visibleUnitMeta = useMemo(
-    () => unitMeta.slice(0, renderedUnitCount),
-    [unitMeta, renderedUnitCount]
   );
 
   // 委托点击处理：单个回调替代每个单元的 inline onClick，消除每次渲染 N 个闭包
@@ -249,7 +275,7 @@ export const ParagraphDocumentFlow = memo(function ParagraphDocumentFlow({
   return (
     <span onClick={handleUnitClick}>
       {visibleUnitMeta.map((item) => {
-        const { rewriteUnit, displaySuggestion, classes } = item;
+        const { rewriteUnit, displaySuggestion, classes, detectionScore } = item;
         const rendered = renderRewriteUnitContent(
           session,
           rewriteUnit,
@@ -268,7 +294,10 @@ export const ParagraphDocumentFlow = memo(function ParagraphDocumentFlow({
               className={classes}
               data-rewrite-unit-id={rewriteUnit.id}
               data-display-suggestion-id={displaySuggestion?.id}
-              title={rewriteUnitTitle(session, rewriteUnit, rewriteEnabled, rewriteBlockedReason)}
+              title={rewriteUnitTitleWithDetection(
+                rewriteUnitTitle(session, rewriteUnit, rewriteEnabled, rewriteBlockedReason),
+                detectionScore
+              )}
             >
               {rendered.body}
             </span>

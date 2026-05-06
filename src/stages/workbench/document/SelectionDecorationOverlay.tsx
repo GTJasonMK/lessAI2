@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 export interface SelectionDecorationRect {
   left: number;
@@ -13,7 +13,6 @@ const VERTICAL_PADDING = 1;
 const MAX_LINE_BRIDGE_GAP = 18;
 const MIN_LINE_BRIDGE_OVERLAP = 1;
 const COORDINATE_PRECISION = 100;
-const EPSILON = 0.01;
 
 function mergeLineRects(rects: SelectionDecorationRect[]) {
   const sortedRects = [...rects].sort((a, b) => a.top - b.top || a.left - b.left);
@@ -136,23 +135,30 @@ export function buildSelectionOutlinePath(rects: SelectionDecorationRect[]) {
   if (columnCount === 0 || rowCount === 0) return "";
 
   const occupied = Array.from({ length: rowCount }, () => Array(columnCount).fill(false));
+  const xIndexByCoordinate = new Map(xs.map((value, index) => [value, index] as const));
+  const yIndexByCoordinate = new Map(ys.map((value, index) => [value, index] as const));
 
-  for (let row = 0; row < rowCount; row += 1) {
-    for (let column = 0; column < columnCount; column += 1) {
-      const left = xs[column];
-      const right = xs[column + 1];
-      const top = ys[row];
-      const bottom = ys[row + 1];
-      occupied[row][column] = outlineRects.some((rect) => {
-        const rectRight = rect.left + rect.width;
-        const rectBottom = rect.top + rect.height;
-        return (
-          left >= rect.left - EPSILON &&
-          right <= rectRight + EPSILON &&
-          top >= rect.top - EPSILON &&
-          bottom <= rectBottom + EPSILON
-        );
-      });
+  for (const rect of outlineRects) {
+    const leftIndex = xIndexByCoordinate.get(rect.left);
+    const rightIndex = xIndexByCoordinate.get(roundCoordinate(rect.left + rect.width));
+    const topIndex = yIndexByCoordinate.get(rect.top);
+    const bottomIndex = yIndexByCoordinate.get(roundCoordinate(rect.top + rect.height));
+    if (
+      leftIndex == null ||
+      rightIndex == null ||
+      topIndex == null ||
+      bottomIndex == null ||
+      rightIndex <= leftIndex ||
+      bottomIndex <= topIndex
+    ) {
+      continue;
+    }
+
+    for (let row = topIndex; row < bottomIndex; row += 1) {
+      const rowCells = occupied[row];
+      for (let column = leftIndex; column < rightIndex; column += 1) {
+        rowCells[column] = true;
+      }
     }
   }
 
@@ -278,7 +284,7 @@ export const SelectionDecorationOverlay = memo(function SelectionDecorationOverl
 }: {
   rects: SelectionDecorationRect[];
 }) {
-  const outlinePath = buildSelectionOutlinePath(rects);
+  const outlinePath = useMemo(() => buildSelectionOutlinePath(rects), [rects]);
   if (!outlinePath) return null;
 
   return (

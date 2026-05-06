@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const PROGRESSIVE_REVEAL_INTERVAL_MS = 40;
+
 interface UseProgressiveRevealCountOptions {
   total: number;
   key: string | number;
@@ -30,7 +32,7 @@ export function useProgressiveRevealCount(options: UseProgressiveRevealCountOpti
     setCount(base);
     if (base >= safeTotal) return;
 
-    let frameId: number | null = null;
+    let timerId: number | null = null;
     let cancelled = false;
 
     const tick = () => {
@@ -38,17 +40,17 @@ export function useProgressiveRevealCount(options: UseProgressiveRevealCountOpti
       setCount((current) => {
         const next = Math.min(safeTotal, current + safeStep);
         if (next < safeTotal) {
-          frameId = window.requestAnimationFrame(tick);
+          timerId = window.setTimeout(tick, PROGRESSIVE_REVEAL_INTERVAL_MS);
         }
         return next;
       });
     };
 
-    frameId = window.requestAnimationFrame(tick);
+    timerId = window.setTimeout(tick, PROGRESSIVE_REVEAL_INTERVAL_MS);
     return () => {
       cancelled = true;
-      if (frameId != null) {
-        window.cancelAnimationFrame(frameId);
+      if (timerId != null) {
+        window.clearTimeout(timerId);
       }
     };
   }, [enabled, key, safeInitial, safeStep, safeTotal]);

@@ -105,6 +105,12 @@
   --mark-running-pulse-to: rgba(168, 85, 247, 0.22);
   --mark-failed-bg: rgba(239, 68, 68, 0.14);
   --mark-failed-ring: rgba(248, 113, 113, 0.22);
+  --mark-detect-low-bg: rgba(34, 197, 94, 0.14);
+  --mark-detect-low-ring: rgba(74, 222, 128, 0.24);
+  --mark-detect-medium-bg: rgba(245, 158, 11, 0.18);
+  --mark-detect-medium-ring: rgba(251, 191, 36, 0.28);
+  --mark-detect-high-bg: rgba(239, 68, 68, 0.18);
+  --mark-detect-high-ring: rgba(248, 113, 113, 0.28);
   --web-page-bg:
     radial-gradient(circle at 16% 14%, rgba(59, 130, 246, 0.18), transparent 28%),
     radial-gradient(circle at 82% 12%, rgba(34, 197, 94, 0.1), transparent 26%),
@@ -627,6 +633,69 @@
 :root[data-theme="dark"] .doc-paragraph-fragment.is-fragment-failed {
   background: var(--mark-failed-bg);
   box-shadow: inset 0 0 0 1px var(--mark-failed-ring);
+}
+
+:root[data-theme="dark"] .legend-chip.is-detect-low,
+:root[data-theme="dark"] .doc-unit.is-detect-low,
+:root[data-theme="dark"] .document-flow-wrap.is-quiet .doc-unit.is-detect-low {
+  background: var(--mark-detect-low-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-low-ring);
+}
+
+:root[data-theme="dark"] .legend-chip.is-detect-medium,
+:root[data-theme="dark"] .doc-unit.is-detect-medium,
+:root[data-theme="dark"] .document-flow-wrap.is-quiet .doc-unit.is-detect-medium {
+  background: var(--mark-detect-medium-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-medium-ring);
+}
+
+:root[data-theme="dark"] .legend-chip.is-detect-high,
+:root[data-theme="dark"] .doc-unit.is-detect-high,
+:root[data-theme="dark"] .document-flow-wrap.is-quiet .doc-unit.is-detect-high {
+  background: var(--mark-detect-high-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-high-ring);
+}
+
+:root[data-theme="dark"] .doc-unit.is-active.is-detect-low,
+:root[data-theme="dark"] .document-flow-wrap.is-quiet .doc-unit.is-active.is-detect-low {
+  box-shadow:
+    0 0 0 2px var(--mark-active-ring),
+    inset 0 0 0 1px var(--mark-detect-low-ring);
+}
+
+:root[data-theme="dark"] .doc-unit.is-active.is-detect-medium,
+:root[data-theme="dark"] .document-flow-wrap.is-quiet .doc-unit.is-active.is-detect-medium {
+  box-shadow:
+    0 0 0 2px var(--mark-active-ring),
+    inset 0 0 0 1px var(--mark-detect-medium-ring);
+}
+
+:root[data-theme="dark"] .doc-unit.is-active.is-detect-high,
+:root[data-theme="dark"] .document-flow-wrap.is-quiet .doc-unit.is-active.is-detect-high {
+  box-shadow:
+    0 0 0 2px var(--mark-active-ring),
+    inset 0 0 0 1px var(--mark-detect-high-ring);
+}
+
+:root[data-theme="dark"] .detection-result-card,
+:root[data-theme="dark"] .detection-segment-row {
+  background: var(--theme-surface-2);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+:root[data-theme="dark"] .detection-result-card.is-low {
+  background:
+    linear-gradient(135deg, var(--mark-detect-low-bg), var(--theme-surface-2));
+}
+
+:root[data-theme="dark"] .detection-result-card.is-medium {
+  background:
+    linear-gradient(135deg, var(--mark-detect-medium-bg), var(--theme-surface-2));
+}
+
+:root[data-theme="dark"] .detection-result-card.is-high {
+  background:
+    linear-gradient(135deg, var(--mark-detect-high-bg), var(--theme-surface-2));
 }
 
 :root[data-theme="dark"] .scroll-region::-webkit-scrollbar-thumb,

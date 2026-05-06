@@ -12,6 +12,28 @@ import type { DocumentSession } from "../../../lib/types";
 import type { EditorSlotOverrides } from "../../../lib/editorSlots";
 import { resolveEditorSlotText } from "../../../lib/editorSlots";
 
+const EDITOR_HUNKS_DEBOUNCE_MS = 160;
+
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    if (delayMs <= 0) {
+      setDebouncedValue(value);
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [delayMs, value]);
+
+  return debouncedValue;
+}
+
 function splitLeadingWhitespaceWithNewline(text: string) {
   if (!text) return { leading: "", rest: "" };
   let index = 0;
@@ -45,6 +67,15 @@ export function useEditorHunks(options: {
 }) {
   const { enabled, currentSession, editorText, editorSlotOverrides } = options;
   const deferredEditorText = useDeferredValue(editorText);
+  const deferredEditorSlotOverrides = useDeferredValue(editorSlotOverrides);
+  const debouncedEditorText = useDebouncedValue(
+    deferredEditorText,
+    enabled ? EDITOR_HUNKS_DEBOUNCE_MS : 0
+  );
+  const debouncedEditorSlotOverrides = useDebouncedValue(
+    deferredEditorSlotOverrides,
+    enabled ? EDITOR_HUNKS_DEBOUNCE_MS : 0
+  );
   const [activeEditorHunkId, setActiveEditorHunkId] = useState<string | null>(null);
 
   const slotBasedMode = useMemo(
@@ -65,7 +96,7 @@ export function useEditorHunks(options: {
         mergedTextFromSlots(
           slots.map((slot) => ({
             ...slot,
-            text: resolveEditorSlotText(slot, editorSlotOverrides)
+            text: resolveEditorSlotText(slot, debouncedEditorSlotOverrides)
           }))
         )
       );
@@ -91,7 +122,7 @@ export function useEditorHunks(options: {
     }
 
     return changed;
-  }, [currentSession, editorSlotOverrides, enabled, slotBasedMode]);
+  }, [currentSession, debouncedEditorSlotOverrides, enabled, slotBasedMode]);
 
   const editorBaselineUnits = useMemo(() => {
     if (!enabled || !currentSession || slotBasedMode) return [];
@@ -111,18 +142,18 @@ export function useEditorHunks(options: {
 
   const textUnchanged = useMemo(() => {
     if (!enabled) return true;
-    return editorBaselineText === deferredEditorText;
-  }, [deferredEditorText, editorBaselineText, enabled]);
+    return editorBaselineText === debouncedEditorText;
+  }, [debouncedEditorText, editorBaselineText, enabled]);
 
   const editorDiffSpans = useMemo(() => {
     if (!enabled || !currentSession || slotBasedMode) return [];
     if (textUnchanged) {
       return [{ type: "unchanged", text: editorBaselineText }];
     }
-    return diffTextByLines(editorBaselineText, deferredEditorText);
+    return diffTextByLines(editorBaselineText, debouncedEditorText);
   }, [
     currentSession,
-    deferredEditorText,
+    debouncedEditorText,
     editorBaselineText,
     enabled,
     slotBasedMode,

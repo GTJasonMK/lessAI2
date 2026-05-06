@@ -51,6 +51,7 @@ pub(super) fn sample_session() -> DocumentSession {
             error_message: None,
         }],
         suggestions: Vec::new(),
+        detection_result: None,
         next_suggestion_sequence: 1,
         status: RunningState::Idle,
         created_at: now,

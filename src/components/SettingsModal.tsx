@@ -29,10 +29,20 @@ interface SettingsModalProps {
   /** 锁定原因提示，用于 UI 解释与 title */
   segmentationPresetLockedReason: string;
   onClose: () => void;
-  onUpdateStringSetting: <K extends "baseUrl" | "apiKey" | "model" | "updateProxy">(
+  onUpdateStringSetting: <
+    K extends
+      | "baseUrl"
+      | "apiKey"
+      | "model"
+      | "detectionBaseUrl"
+      | "detectionApiKey"
+      | "detectionModel"
+      | "updateProxy"
+  >(
     key: K,
     value: string
   ) => void;
+  onUpdateBooleanSetting: <K extends "detectionEnabled">(key: K, value: boolean) => void;
   onUpdateNumberSetting: (
     key: "timeoutMs" | "temperature" | "maxConcurrency" | "unitsPerBatch",
     value: string
@@ -68,6 +78,7 @@ export const SettingsModal = memo(function SettingsModal({
   segmentationPresetLockedReason,
   onClose,
   onUpdateStringSetting,
+  onUpdateBooleanSetting,
   onUpdateNumberSetting,
   onUpdateSegmentationPreset,
   onUpdateRewriteHeadings,
@@ -237,6 +248,7 @@ export const SettingsModal = memo(function SettingsModal({
                 }
                 onTestProvider={onTestProvider}
                 onUpdateStringSetting={onUpdateStringSetting}
+                onUpdateBooleanSetting={onUpdateBooleanSetting}
                 onUpdateNumberSetting={onUpdateNumberSetting}
               />
             ) : null}

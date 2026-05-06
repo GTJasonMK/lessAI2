@@ -15,6 +15,8 @@ mod selection;
 pub(in crate::rewrite) mod transport;
 mod validate;
 
+pub(crate) use transport::call_chat_model;
+
 /// 编辑器逐槽位改写输入：前端直接传入已定义好的槽位文本与分隔符。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -10,6 +10,10 @@ pub struct AppSettings {
     pub base_url: String,
     pub api_key: String,
     pub model: String,
+    pub detection_enabled: bool,
+    pub detection_base_url: String,
+    pub detection_api_key: String,
+    pub detection_model: String,
     pub update_proxy: String,
     pub timeout_ms: u64,
     pub temperature: f32,
@@ -48,6 +52,10 @@ impl Default for AppSettings {
             base_url: "https://api.deepseek.com/v1".to_string(),
             api_key: String::new(),
             model: "deepseek-v4-flash".to_string(),
+            detection_enabled: false,
+            detection_base_url: "https://api.deepseek.com/v1".to_string(),
+            detection_api_key: String::new(),
+            detection_model: "deepseek-v4-flash".to_string(),
             update_proxy: String::new(),
             timeout_ms: 45_000,
             temperature: 0.8,
@@ -172,6 +180,36 @@ pub struct DocumentSnapshot {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DetectionResult {
+    pub overall_score: f32,
+    #[serde(default)]
+    pub summary: String,
+    #[serde(default)]
+    pub segments: Vec<DetectionSegment>,
+    pub created_at: DateTime<Utc>,
+    pub model: String,
+    #[serde(default)]
+    pub source_snapshot: Option<DocumentSnapshot>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DetectionSegment {
+    pub id: String,
+    #[serde(default)]
+    pub rewrite_unit_id: Option<String>,
+    pub text: String,
+    #[serde(default)]
+    pub start: Option<usize>,
+    #[serde(default)]
+    pub end: Option<usize>,
+    pub score: f32,
+    #[serde(default)]
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EditorSlotEdit {
     pub slot_id: String,
     pub text: String,
@@ -206,6 +244,8 @@ pub struct DocumentSession {
     #[serde(default)]
     pub rewrite_units: Vec<RewriteUnit>,
     pub suggestions: Vec<RewriteSuggestion>,
+    #[serde(default)]
+    pub detection_result: Option<DetectionResult>,
     pub next_suggestion_sequence: u64,
     pub status: RunningState,
     pub created_at: DateTime<Utc>,
@@ -251,6 +291,8 @@ struct DocumentSessionWire {
     #[serde(default)]
     rewrite_units: Vec<RewriteUnit>,
     suggestions: Vec<RewriteSuggestion>,
+    #[serde(default)]
+    detection_result: Option<DetectionResult>,
     next_suggestion_sequence: u64,
     status: RunningState,
     created_at: DateTime<Utc>,
@@ -284,6 +326,7 @@ impl DocumentSessionWire {
             writeback_slots: self.writeback_slots,
             rewrite_units: self.rewrite_units,
             suggestions: self.suggestions,
+            detection_result: self.detection_result,
             next_suggestion_sequence: self.next_suggestion_sequence,
             status: self.status,
             created_at: self.created_at,

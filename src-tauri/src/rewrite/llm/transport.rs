@@ -47,7 +47,7 @@ fn format_reqwest_error(error: reqwest::Error) -> String {
     lines.join("\n")
 }
 
-pub(super) async fn call_chat_model(
+pub(crate) async fn call_chat_model(
     client: &reqwest::Client,
     settings: &AppSettings,
     system_prompt: &str,

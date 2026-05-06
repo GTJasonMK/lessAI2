@@ -57,6 +57,15 @@ export function isSettingsReady(settings: AppSettings) {
   );
 }
 
+export function isDetectionSettingsReady(settings: AppSettings) {
+  return (
+    settings.detectionEnabled &&
+    settings.detectionBaseUrl.trim().length > 0 &&
+    settings.detectionApiKey.trim().length > 0 &&
+    settings.detectionModel.trim().length > 0
+  );
+}
+
 export function formatSessionStatus(status: RunningState) {
   switch (status) {
     case "idle":

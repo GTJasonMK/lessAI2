@@ -12,6 +12,21 @@ export function ensureSettingsReady(settings: AppSettings) {
   }
 }
 
+export function ensureDetectionSettingsReady(settings: AppSettings) {
+  if (!settings.detectionEnabled) {
+    throw new Error("AI 检测未启用，请先在设置中开启检测接口。");
+  }
+  if (!settings.detectionBaseUrl.trim()) {
+    throw new Error("检测 Base URL 不能为空。");
+  }
+  if (!settings.detectionApiKey.trim()) {
+    throw new Error("检测 API Key 不能为空。");
+  }
+  if (!settings.detectionModel.trim()) {
+    throw new Error("检测模型名称不能为空。");
+  }
+}
+
 export function validateSettings(settings: AppSettings): AppSettings {
   if (settings.timeoutMs < 1_000) {
     throw new Error("超时（毫秒）必须大于等于 1000。");

@@ -38,6 +38,26 @@ export function useSelectionDecorationRects<T extends HTMLElement>({
     SelectionDecorationRect[]
   >([]);
   const frameRef = useRef<number | null>(null);
+  const latestRectsRef = useRef<SelectionDecorationRect[]>([]);
+
+  const updateSelectionDecorationRects = useCallback((nextRects: SelectionDecorationRect[]) => {
+    const previousRects = latestRectsRef.current;
+    const unchanged =
+      previousRects.length === nextRects.length &&
+      previousRects.every((previous, index) => {
+        const next = nextRects[index];
+        return (
+          next != null &&
+          previous.left === next.left &&
+          previous.top === next.top &&
+          previous.width === next.width &&
+          previous.height === next.height
+        );
+      });
+    if (unchanged) return;
+    latestRectsRef.current = nextRects;
+    setSelectionDecorationRects(nextRects);
+  }, []);
 
   const cancelScheduledSelectionStateSync = useCallback(() => {
     if (frameRef.current == null) return;
@@ -47,18 +67,18 @@ export function useSelectionDecorationRects<T extends HTMLElement>({
 
   const clearSelectionDecoration = useCallback(() => {
     cancelScheduledSelectionStateSync();
-    setSelectionDecorationRects([]);
-  }, [cancelScheduledSelectionStateSync]);
+    updateSelectionDecorationRects([]);
+  }, [cancelScheduledSelectionStateSync, updateSelectionDecorationRects]);
 
   const syncSelectionState = useCallback(() => {
     const root = rootRef.current;
     const selection = window.getSelection();
     const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
     const activeRange = resolveRange({ root, selection: selection ?? null, range });
-    setSelectionDecorationRects(
+    updateSelectionDecorationRects(
       activeRange ? buildSelectionDecorationRects(root, activeRange) : []
     );
-  }, [resolveRange, rootRef]);
+  }, [resolveRange, rootRef, updateSelectionDecorationRects]);
 
   const scheduleSelectionStateSync = useCallback(() => {
     cancelScheduledSelectionStateSync();
@@ -69,12 +89,12 @@ export function useSelectionDecorationRects<T extends HTMLElement>({
   }, [cancelScheduledSelectionStateSync, syncSelectionState]);
 
   useEffect(() => {
-    document.addEventListener("selectionchange", syncSelectionState);
+    document.addEventListener("selectionchange", scheduleSelectionStateSync);
     return () => {
-      document.removeEventListener("selectionchange", syncSelectionState);
+      document.removeEventListener("selectionchange", scheduleSelectionStateSync);
       cancelScheduledSelectionStateSync();
     };
-  }, [cancelScheduledSelectionStateSync, syncSelectionState]);
+  }, [cancelScheduledSelectionStateSync, scheduleSelectionStateSync]);
 
   return {
     selectionDecorationRects,

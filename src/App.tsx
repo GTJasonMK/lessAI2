@@ -25,6 +25,7 @@ import { normalizeSelectedRewriteUnitIds } from "./lib/rewriteUnitSelection";
 import { isWindowDragExcludedTarget } from "./lib/windowDrag";
 import type {
   AppSettings,
+  DetectionResult,
   DocumentSession,
   DocumentSnapshot,
   ProviderCheckResult,
@@ -45,6 +46,7 @@ import { useConfirmDialog } from "./app/hooks/useConfirmDialog";
 import { useUpdateChecker } from "./app/hooks/useUpdateChecker";
 import { useSegmentationPresetLock } from "./app/hooks/useSegmentationPresetLock";
 import { useDocumentActions } from "./app/hooks/useDocumentActions";
+import { useDetectionActions } from "./app/hooks/useDetectionActions";
 import { useDocumentFinalizeActions } from "./app/hooks/useDocumentFinalizeActions";
 import { useDocumentScrollRestore } from "./app/hooks/useDocumentScrollRestore";
 import { logScrollRestore } from "./app/hooks/documentScrollRestoreDebug";
@@ -124,6 +126,9 @@ export default function App() {
   const [editorText, setEditorText] = useState("");
   const [editorSlotOverrides, setEditorSlotOverrides] = useState<EditorSlotOverrides>({});
   const [editorHasSelection, setEditorHasSelection] = useState(false);
+  const [documentSelectionText, setDocumentSelectionText] = useState("");
+  const [selectionDetectionResult, setSelectionDetectionResult] =
+    useState<DetectionResult | null>(null);
 
   const { notice, showNotice, dismissNotice } = useNotice();
   const { busyAction, withBusy } = useBusyAction();
@@ -171,6 +176,8 @@ export default function App() {
   activeSuggestionIdRef.current = activeSuggestionId;
   const selectedRewriteUnitIdsRef = useRef(selectedRewriteUnitIds);
   selectedRewriteUnitIdsRef.current = selectedRewriteUnitIds;
+  const documentSelectionTextRef = useRef(documentSelectionText);
+  documentSelectionTextRef.current = documentSelectionText;
   const editorTextRef = useRef(editorText);
   editorTextRef.current = editorText;
   const editorBaselineTextRef = useRef(editorBaselineText);
@@ -205,6 +212,10 @@ export default function App() {
       applyEditorSlotOverride(prev, slot, normalized)
     );
     setEditorText(buildEditorTextFromSession(session, nextOverrides));
+  }, []);
+
+  const handleDocumentSelectionTextChange = useCallback((value: string) => {
+    setDocumentSelectionText((current) => (current === value ? current : value));
   }, []);
 
   const currentStats = useMemo(
@@ -577,7 +588,15 @@ export default function App() {
 
   useEffect(() => {
     setSelectedRewriteUnitIds([]);
+    setDocumentSelectionText("");
+    setSelectionDetectionResult(null);
   }, [currentSession?.id]);
+
+  useEffect(() => {
+    if (stage !== "workbench") {
+      setDocumentSelectionText("");
+    }
+  }, [stage]);
 
   useEffect(() => {
     if (!currentSession) return;
@@ -597,6 +616,7 @@ export default function App() {
   const {
     handleUpdateStringSetting,
     handleUpdateNumberSetting,
+    handleUpdateBooleanSetting,
     handleUpdateSegmentationPreset,
     handleUpdateRewriteHeadings,
     handleUpdateRewriteMode,
@@ -654,6 +674,22 @@ export default function App() {
     editorRef,
     editorSlotOverridesRef,
     requestConfirm,
+    showNotice,
+    withBusy
+  });
+
+  const { handleStartDetection, handleDetectSelection } = useDetectionActions({
+    settings,
+    stageRef,
+    currentSessionRef,
+    activeRewriteUnitIdRef,
+    activeSuggestionIdRef,
+    documentSelectionTextRef,
+    editorBaseSnapshotRef,
+    editorRef,
+    captureDocumentScrollPosition,
+    applySessionState,
+    setSelectionDetectionResult,
     showNotice,
     withBusy
   });
@@ -768,6 +804,12 @@ export default function App() {
   const onRewriteSelectionStable = useCallback(() => {
     void handleRewriteSelection();
   }, [handleRewriteSelection]);
+  const onStartDetectionStable = useCallback(() => {
+    void handleStartDetection();
+  }, [handleStartDetection]);
+  const onDetectSelectionStable = useCallback(() => {
+    void handleDetectSelection();
+  }, [handleDetectSelection]);
   const onCheckUpdateStable = useCallback(() => {
     void handleCheckUpdate();
   }, [handleCheckUpdate]);
@@ -821,6 +863,8 @@ export default function App() {
               activeSuggestionId={activeSuggestionId}
               activeReviewNavigationRequestId={activeReviewNavigationRequestId}
               selectedRewriteUnitIds={selectedRewriteUnitIds}
+              documentSelectionText={documentSelectionText}
+              selectionDetectionResult={selectionDetectionResult}
               busyAction={busyAction}
               editorMode={stage === "editor"}
               editorText={editorText}
@@ -847,11 +891,14 @@ export default function App() {
               onChangeEditorText={handleChangeEditorText}
               onChangeEditorSlotText={handleChangeEditorSlotText}
               onChangeEditorHasSelection={setEditorHasSelection}
+              onDocumentSelectionTextChange={handleDocumentSelectionTextChange}
               onSaveEditor={onSaveEditorStable}
               onSaveEditorAndExit={onSaveEditorAndExitStable}
               onDiscardEditorChanges={handleDiscardEditorChanges}
               onExitEditor={handleExitEditor}
               onRewriteSelection={onRewriteSelectionStable}
+              onStartDetection={onStartDetectionStable}
+              onDetectSelection={onDetectSelectionStable}
             />
           </div>
 
@@ -866,6 +913,7 @@ export default function App() {
             segmentationPresetLockedReason={segmentationPresetLock.reason}
             onClose={closeSettings}
             onUpdateStringSetting={handleUpdateStringSetting}
+            onUpdateBooleanSetting={handleUpdateBooleanSetting}
             onUpdateNumberSetting={handleUpdateNumberSetting}
             onUpdateSegmentationPreset={handleUpdateSegmentationPreset}
             onUpdateRewriteHeadings={handleUpdateRewriteHeadings}

@@ -49,6 +49,12 @@
   --mark-running-pulse-to: rgba(134, 93, 255, 0.17);
   --mark-failed-bg: rgba(214, 45, 32, 0.12);
   --mark-failed-ring: rgba(214, 45, 32, 0.22);
+  --mark-detect-low-bg: rgba(31, 122, 60, 0.1);
+  --mark-detect-low-ring: rgba(31, 122, 60, 0.22);
+  --mark-detect-medium-bg: rgba(239, 193, 34, 0.16);
+  --mark-detect-medium-ring: rgba(180, 95, 24, 0.24);
+  --mark-detect-high-bg: rgba(214, 45, 32, 0.14);
+  --mark-detect-high-ring: rgba(214, 45, 32, 0.28);
   --focus: 0 0 0 3px rgba(23, 68, 207, 0.22);
   --transition: 180ms ease;
   --web-page-bg:

@@ -120,6 +120,7 @@ export function createSessionLifecycle(deps: SessionLifecycleDeps) {
       writebackSlots: structure.writebackSlots,
       rewriteUnits: structure.rewriteUnits,
       suggestions: [],
+      detectionResult: null,
       nextSuggestionSequence: 1,
       status: "idle",
       createdAt: params.createdAt ?? now,

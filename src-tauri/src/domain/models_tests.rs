@@ -35,6 +35,10 @@ fn fills_missing_app_settings_fields_from_defaults() {
         "baseUrl": "https://api.deepseek.com/v1",
         "apiKey": "",
         "model": "deepseek-v4-flash",
+        "detectionEnabled": false,
+        "detectionBaseUrl": "https://api.deepseek.com/v1",
+        "detectionApiKey": "",
+        "detectionModel": "deepseek-v4-flash",
         "updateProxy": "",
         "timeoutMs": 45000,
         "temperature": 0.8,
@@ -49,6 +53,10 @@ fn fills_missing_app_settings_fields_from_defaults() {
 
     for field in [
         "updateProxy",
+        "detectionEnabled",
+        "detectionBaseUrl",
+        "detectionApiKey",
+        "detectionModel",
         "rewriteHeadings",
         "maxConcurrency",
         "unitsPerBatch",
@@ -68,6 +76,16 @@ fn fills_missing_app_settings_fields_from_defaults() {
         let defaults = AppSettings::default();
         match field {
             "updateProxy" => assert_eq!(parsed.update_proxy, defaults.update_proxy),
+            "detectionEnabled" => {
+                assert_eq!(parsed.detection_enabled, defaults.detection_enabled)
+            }
+            "detectionBaseUrl" => {
+                assert_eq!(parsed.detection_base_url, defaults.detection_base_url)
+            }
+            "detectionApiKey" => {
+                assert_eq!(parsed.detection_api_key, defaults.detection_api_key)
+            }
+            "detectionModel" => assert_eq!(parsed.detection_model, defaults.detection_model),
             "rewriteHeadings" => assert_eq!(parsed.rewrite_headings, defaults.rewrite_headings),
             "maxConcurrency" => assert_eq!(parsed.max_concurrency, defaults.max_concurrency),
             "unitsPerBatch" => assert_eq!(parsed.units_per_batch, defaults.units_per_batch),

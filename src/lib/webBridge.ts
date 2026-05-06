@@ -6,6 +6,7 @@ import { createRewriteCommands } from "./webBridgeRewriteCommands";
 import { createSessionCommands } from "./webBridgeSessionCommands";
 import { createSessionLifecycle } from "./webBridgeSessionLifecycle";
 import { createSettingsCommands } from "./webBridgeSettingsCommands";
+import { createDetectionCommands } from "./webBridgeDetectionCommands";
 import { snapshotFromText } from "./webBridgeText";
 import { validateSettings } from "./webBridgeModelApi";
 import {
@@ -272,6 +273,16 @@ const rewriteCommands = createRewriteCommands({
   activeEditorSessionError: ACTIVE_EDITOR_SESSION_ERROR
 });
 
+const detectionCommands = createDetectionCommands({
+  deepClone,
+  getSettings,
+  getSessionOrThrow,
+  ensureNoActiveJob,
+  ensureEditorBaseSnapshotMatches,
+  updateSessionTimestamp,
+  activeRewriteSessionError: ACTIVE_REWRITE_SESSION_ERROR
+});
+
 const writebackCommands = createWritebackCommands({
   sessions,
   deepClone,
@@ -318,6 +329,14 @@ export async function webInvoke<T>(command: string, payload?: CommandPayload) {
       return (await sessionCommands.loadSessionCommand(String(payload?.sessionId ?? ""))) as T;
     case "reset_session":
       return (await sessionCommands.resetSessionCommand(String(payload?.sessionId ?? ""))) as T;
+    case "start_detection":
+      return (await detectionCommands.startDetectionCommand(String(payload?.sessionId ?? ""))) as T;
+    case "detect_selection":
+      return (await detectionCommands.detectSelectionCommand(
+        String(payload?.sessionId ?? ""),
+        String(payload?.text ?? ""),
+        (payload?.editorBaseSnapshot as DocumentSnapshot | null | undefined) ?? null
+      )) as T;
     case "start_rewrite":
       return (await rewriteCommands.startRewriteCommand(
         String(payload?.sessionId ?? ""),

@@ -318,6 +318,21 @@
   gap: 8px;
 }
 
+.field-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  font-weight: 700;
+}
+
+.field-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
 .field span {
   font-size: 0.82rem;
   font-weight: 700;

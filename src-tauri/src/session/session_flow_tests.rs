@@ -31,6 +31,7 @@ fn sample_session(id: &str) -> DocumentSession {
         writeback_slots: Vec::new(),
         rewrite_units: Vec::new(),
         suggestions: Vec::new(),
+        detection_result: None,
         next_suggestion_sequence: 1,
         status: RunningState::Idle,
         created_at: now,

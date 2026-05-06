@@ -619,6 +619,21 @@
   color: var(--delete);
 }
 
+.legend-chip.is-detect-low {
+  background: var(--mark-detect-low-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-low-ring);
+}
+
+.legend-chip.is-detect-medium {
+  background: var(--mark-detect-medium-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-medium-ring);
+}
+
+.legend-chip.is-detect-high {
+  background: var(--mark-detect-high-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-high-ring);
+}
+
 .document-flow {
   margin: 0;
 }
@@ -811,6 +826,230 @@
 .doc-unit.is-failed {
   background: var(--mark-failed-bg);
   box-shadow: inset 0 0 0 1px var(--mark-failed-ring);
+}
+
+.doc-unit.is-detect-low,
+.document-flow-wrap.is-quiet .doc-unit.is-detect-low {
+  background: var(--mark-detect-low-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-low-ring);
+}
+
+.doc-unit.is-detect-medium,
+.document-flow-wrap.is-quiet .doc-unit.is-detect-medium {
+  background: var(--mark-detect-medium-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-medium-ring);
+}
+
+.doc-unit.is-detect-high,
+.document-flow-wrap.is-quiet .doc-unit.is-detect-high {
+  background: var(--mark-detect-high-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-high-ring);
+}
+
+.doc-unit.is-active.is-detect-low,
+.document-flow-wrap.is-quiet .doc-unit.is-active.is-detect-low {
+  box-shadow:
+    0 0 0 2px var(--mark-active-ring),
+    inset 0 0 0 1px var(--mark-detect-low-ring);
+}
+
+.doc-unit.is-active.is-detect-medium,
+.document-flow-wrap.is-quiet .doc-unit.is-active.is-detect-medium {
+  box-shadow:
+    0 0 0 2px var(--mark-active-ring),
+    inset 0 0 0 1px var(--mark-detect-medium-ring);
+}
+
+.doc-unit.is-active.is-detect-high,
+.document-flow-wrap.is-quiet .doc-unit.is-active.is-detect-high {
+  box-shadow:
+    0 0 0 2px var(--mark-active-ring),
+    inset 0 0 0 1px var(--mark-detect-high-ring);
+}
+
+.detection-pane {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  padding-bottom: 6px;
+}
+
+.detection-pane-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.detection-pane-actions .switch-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.detection-pane-actions .switch-chip svg {
+  width: 16px;
+  height: 16px;
+}
+
+.detection-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.detection-result-card.is-low {
+  background:
+    linear-gradient(135deg, var(--mark-detect-low-bg), rgba(255, 255, 255, 0.9));
+}
+
+.detection-result-card.is-medium {
+  background:
+    linear-gradient(135deg, var(--mark-detect-medium-bg), rgba(255, 255, 255, 0.9));
+}
+
+.detection-result-card.is-high {
+  background:
+    linear-gradient(135deg, var(--mark-detect-high-bg), rgba(255, 255, 255, 0.9));
+}
+
+.detection-result-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detection-result-head strong,
+.detection-result-head span,
+.detection-section-label,
+.detection-segment-reason {
+  display: block;
+}
+
+.detection-result-head span,
+.detection-section-label,
+.detection-segment-reason {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.detection-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 20, 20, 0.12);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.detection-score svg {
+  width: 16px;
+  height: 16px;
+}
+
+.detection-score.is-low,
+.detection-risk.is-low {
+  background: var(--mark-detect-low-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-low-ring);
+}
+
+.detection-score.is-medium,
+.detection-risk.is-medium {
+  background: var(--mark-detect-medium-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-medium-ring);
+}
+
+.detection-score.is-high,
+.detection-risk.is-high {
+  background: var(--mark-detect-high-bg);
+  box-shadow: inset 0 0 0 1px var(--mark-detect-high-ring);
+}
+
+.detection-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.detection-summary p {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.detection-risk {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.detection-segment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detection-segment-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: start;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(20, 20, 20, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.68);
+  color: inherit;
+  text-align: left;
+}
+
+.detection-segment-row.is-clickable {
+  cursor: pointer;
+}
+
+.detection-segment-row.is-clickable:hover,
+.detection-segment-row.is-active {
+  box-shadow: var(--panel-shadow-sm);
+}
+
+.detection-segment-row.is-low {
+  box-shadow: inset 0 0 0 1px var(--mark-detect-low-ring);
+}
+
+.detection-segment-row.is-medium {
+  box-shadow: inset 0 0 0 1px var(--mark-detect-medium-ring);
+}
+
+.detection-segment-row.is-high {
+  box-shadow: inset 0 0 0 1px var(--mark-detect-high-ring);
+}
+
+.detection-segment-score {
+  grid-row: span 2;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.detection-segment-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .error-card {

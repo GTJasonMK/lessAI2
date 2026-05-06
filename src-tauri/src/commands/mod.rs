@@ -3,8 +3,9 @@ mod session;
 mod system;
 
 pub use document::{
-    apply_suggestion, delete_suggestion, dismiss_suggestion, export_document, finalize_document,
-    rewrite_editor_slots, rewrite_selection, run_document_writeback,
+    apply_suggestion, delete_suggestion, detect_selection, dismiss_suggestion, export_document,
+    finalize_document, rewrite_editor_slots, rewrite_selection, run_document_writeback,
+    start_detection,
 };
 pub use session::{
     cancel_rewrite, load_session, open_document, pause_rewrite, reset_session, resume_rewrite,

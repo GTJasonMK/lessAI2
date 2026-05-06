@@ -2,6 +2,7 @@ import { isDemoRuntime } from "./runtimeMode";
 import { webInvoke } from "./webBridge";
 import type {
   AppSettings,
+  DetectionResult,
   DocumentSession,
   DocumentSnapshot,
   EditorSlotEdit,
@@ -77,6 +78,21 @@ export async function loadSession(sessionId: string) {
 
 export async function resetSession(sessionId: string) {
   return invokeSessionCommand<DocumentSession>("reset_session", sessionId);
+}
+
+export async function startDetection(sessionId: string) {
+  return invokeSessionCommand<DocumentSession>("start_detection", sessionId);
+}
+
+export async function detectSelection(
+  sessionId: string,
+  text: string,
+  editorBaseSnapshot: DocumentSnapshot | null
+) {
+  return invokeSessionCommand<DetectionResult>("detect_selection", sessionId, {
+    text,
+    editorBaseSnapshot
+  });
 }
 
 export async function startRewrite(

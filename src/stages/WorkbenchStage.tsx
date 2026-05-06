@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import type { MutableRefObject } from "react";
 import type {
   AppSettings,
+  DetectionResult,
   DocumentSession,
   RewriteMode,
   RewriteProgress,
@@ -12,6 +13,7 @@ import type { SessionStats } from "../lib/helpers";
 import {
   buildRunningRewriteUnitIdSet,
   groupSuggestionsByRewriteUnit,
+  isDetectionSettingsReady,
   isSettingsReady
 } from "../lib/helpers";
 import { resolveOptimisticManualRunningRewriteUnitId } from "../lib/rewriteUnitSelection";
@@ -30,6 +32,8 @@ interface WorkbenchStageProps {
   activeSuggestionId: string | null;
   activeReviewNavigationRequestId: number;
   selectedRewriteUnitIds: string[];
+  documentSelectionText: string;
+  selectionDetectionResult: DetectionResult | null;
   busyAction: string | null;
   editorMode: boolean;
   editorText: string;
@@ -56,11 +60,14 @@ interface WorkbenchStageProps {
   onChangeEditorText: (value: string) => void;
   onChangeEditorSlotText: (slotId: string, value: string) => void;
   onChangeEditorHasSelection: (value: boolean) => void;
+  onDocumentSelectionTextChange: (value: string) => void;
   onSaveEditor: () => void;
   onSaveEditorAndExit: () => void;
   onDiscardEditorChanges: () => void;
   onExitEditor: () => void;
   onRewriteSelection: () => void;
+  onStartDetection: () => void;
+  onDetectSelection: () => void;
 }
 
 export const WorkbenchStage = memo(function WorkbenchStage({
@@ -73,6 +80,8 @@ export const WorkbenchStage = memo(function WorkbenchStage({
   activeSuggestionId,
   activeReviewNavigationRequestId,
   selectedRewriteUnitIds,
+  documentSelectionText,
+  selectionDetectionResult,
   busyAction,
   editorMode,
   editorText,
@@ -99,13 +108,17 @@ export const WorkbenchStage = memo(function WorkbenchStage({
   onChangeEditorText,
   onChangeEditorSlotText,
   onChangeEditorHasSelection,
+  onDocumentSelectionTextChange,
   onSaveEditor,
   onSaveEditorAndExit,
   onDiscardEditorChanges,
   onExitEditor,
-  onRewriteSelection
+  onRewriteSelection,
+  onStartDetection,
+  onDetectSelection
 }: WorkbenchStageProps) {
   const settingsReady = isSettingsReady(settings);
+  const detectionSettingsReady = isDetectionSettingsReady(settings);
 
   const [showMarkers, setShowMarkers] = useState<boolean>(() => {
     try {
@@ -178,6 +191,7 @@ export const WorkbenchStage = memo(function WorkbenchStage({
             activeSuggestionId={activeSuggestionId}
             activeReviewNavigationRequestId={activeReviewNavigationRequestId}
             selectedRewriteUnitIds={selectedRewriteUnitIds}
+            documentSelectionText={documentSelectionText}
             busyAction={busyAction}
             editorMode={editorMode}
             editorText={editorText}
@@ -200,11 +214,15 @@ export const WorkbenchStage = memo(function WorkbenchStage({
             onChangeEditorText={onChangeEditorText}
             onChangeEditorSlotText={onChangeEditorSlotText}
             onChangeEditorHasSelection={onChangeEditorHasSelection}
+            onDocumentSelectionTextChange={onDocumentSelectionTextChange}
             onSaveEditor={onSaveEditor}
             onSaveEditorAndExit={onSaveEditorAndExit}
             onDiscardEditorChanges={onDiscardEditorChanges}
             onExitEditor={onExitEditor}
             onRewriteSelection={onRewriteSelection}
+            detectionSettingsReady={detectionSettingsReady}
+            onStartDetection={onStartDetection}
+            onDetectSelection={onDetectSelection}
             onToggleMarkers={handleToggleMarkers}
           />
         </div>
@@ -218,6 +236,11 @@ export const WorkbenchStage = memo(function WorkbenchStage({
             activeRewriteUnitSuggestions={activeRewriteUnitSuggestions}
             activeSuggestionId={activeSuggestionId}
             activeSuggestion={activeSuggestion}
+            detectionSettingsReady={detectionSettingsReady}
+            selectionDetectionAvailable={
+              editorMode ? editorHasSelection : documentSelectionText.trim().length > 0
+            }
+            selectionDetectionResult={selectionDetectionResult}
             showMarkers={showMarkers}
             busyAction={busyAction}
             editorMode={editorMode}
@@ -232,6 +255,8 @@ export const WorkbenchStage = memo(function WorkbenchStage({
             onDismissSuggestion={onDismissSuggestion}
             onDeleteSuggestion={onDeleteSuggestion}
             onRetry={onRetry}
+            onStartDetection={onStartDetection}
+            onDetectSelection={onDetectSelection}
           />
         </div>
       </div>

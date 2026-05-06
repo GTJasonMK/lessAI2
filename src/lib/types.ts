@@ -24,6 +24,10 @@ export interface AppSettings {
   baseUrl: string;
   apiKey: string;
   model: string;
+  detectionEnabled: boolean;
+  detectionBaseUrl: string;
+  detectionApiKey: string;
+  detectionModel: string;
   /**
    * 统一网络代理（可选），用于 AI 请求与更新检查/下载。
    * 为空字符串表示直连。
@@ -58,6 +62,25 @@ export interface TextPresentation {
 
 export interface DocumentSnapshot {
   sha256: string;
+}
+
+export interface DetectionSegment {
+  id: string;
+  rewriteUnitId?: string | null;
+  text: string;
+  start?: number | null;
+  end?: number | null;
+  score: number;
+  reason?: string | null;
+}
+
+export interface DetectionResult {
+  overallScore: number;
+  summary: string;
+  segments: DetectionSegment[];
+  createdAt: string;
+  model: string;
+  sourceSnapshot?: DocumentSnapshot | null;
 }
 
 export interface CapabilityGate {
@@ -141,6 +164,7 @@ export interface DocumentSession {
   writebackSlots: WritebackSlot[];
   rewriteUnits: RewriteUnit[];
   suggestions: RewriteSuggestion[];
+  detectionResult?: DetectionResult | null;
   nextSuggestionSequence: number;
   status: RunningState;
   createdAt: string;

@@ -747,25 +747,20 @@ export const StructuredSlotEditor = memo(
       [getSingleEditableSlotSelection, handleEditorInput]
     );
 
-    const visibleRewriteUnitIdSet = useMemo(
-      () => new Set(session.rewriteUnits.slice(0, renderedUnitCount).map((item) => item.id)),
+    const visibleRewriteUnits = useMemo(
+      () => session.rewriteUnits.slice(0, renderedUnitCount),
       [renderedUnitCount, session.rewriteUnits]
     );
 
-    const renderedUnits = session.rewriteUnits.map((rewriteUnit) => {
-      if (!visibleRewriteUnitIdSet.has(rewriteUnit.id)) {
-        return null;
-      }
-      return (
-        <StructuredEditorUnit
-          key={rewriteUnit.id}
-          session={session}
-          rewriteUnit={rewriteUnit}
-          slotOverrides={slotOverrides}
-          registerNode={registerNode}
-        />
-      );
-    });
+    const renderedUnits = visibleRewriteUnits.map((rewriteUnit) => (
+      <StructuredEditorUnit
+        key={rewriteUnit.id}
+        session={session}
+        rewriteUnit={rewriteUnit}
+        slotOverrides={slotOverrides}
+        registerNode={registerNode}
+      />
+    ));
 
     return (
       <div

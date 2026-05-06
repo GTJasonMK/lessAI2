@@ -36,6 +36,7 @@ fn session_from_docx(path: &std::path::Path, bytes: &[u8]) -> DocumentSession {
         rewrite_units: build_rewrite_units(&model.writeback_slots, SegmentationPreset::Paragraph),
         writeback_slots: model.writeback_slots,
         suggestions: Vec::new(),
+        detection_result: None,
         next_suggestion_sequence: 1,
         status: RunningState::Idle,
         created_at: now,

@@ -55,6 +55,7 @@ pub(crate) fn build_clean_session(input: CleanSessionBuildInput<'_>) -> Document
         writeback_slots,
         rewrite_units,
         suggestions: Vec::new(),
+        detection_result: None,
         next_suggestion_sequence: 1,
         status: RunningState::Idle,
         created_at: input.created_at,
