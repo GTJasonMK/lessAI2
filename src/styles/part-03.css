@@ -260,6 +260,23 @@
   line-height: 1.55;
 }
 
+.prompt-sample-input {
+  min-height: 160px;
+  max-height: 260px;
+}
+
+.prompt-inference-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.prompt-inference-action svg {
+  width: 16px;
+  height: 16px;
+}
+
 .modal-footer {
   display: flex;
   align-items: center;

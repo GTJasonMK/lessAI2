@@ -3,6 +3,7 @@ import {
   logScrollRestore,
   snapshotScrollNode
 } from "../../../app/hooks/documentScrollRestoreDebug";
+import { AI_DETECTION_UI_ENABLED } from "../../../lib/featureFlags";
 import {
   rewriteUnitHasEditableSlot,
   summarizeRewriteUnitSuggestions
@@ -202,7 +203,10 @@ export const ParagraphDocumentFlow = memo(function ParagraphDocumentFlow({
     [renderedUnitCount, rewriteUnits]
   );
   const detectionScoresByRewriteUnit = useMemo(
-    () => buildDetectionScoreByRewriteUnit(session.detectionResult),
+    () =>
+      AI_DETECTION_UI_ENABLED
+        ? buildDetectionScoreByRewriteUnit(session.detectionResult)
+        : new Map<string, number>(),
     [session.detectionResult]
   );
 

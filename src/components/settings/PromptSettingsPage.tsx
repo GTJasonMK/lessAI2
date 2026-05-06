@@ -1,9 +1,11 @@
 import { memo, useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
-import type { AppSettings, PromptTemplate } from "../../lib/types";
+import { LoaderCircle, Sparkles, Trash2 } from "lucide-react";
+import type { AppSettings, PromptTemplate, PromptTemplateDraft } from "../../lib/types";
 import { PROMPT_PRESETS, makePromptPreview } from "../../lib/promptPresets";
 import type { ConfirmModalOptions } from "../ConfirmModal";
 import { StatusBadge } from "../StatusBadge";
+
+const PROMPT_INFERENCE_MIN_SAMPLE_CHARS = 20;
 
 function makeCustomPromptId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -18,11 +20,26 @@ function makeNextCustomPromptName(existing: PromptTemplate[]) {
   return `${base} ${index}`;
 }
 
+function makeUniqueCustomPromptName(existing: PromptTemplate[], preferredName: string) {
+  const base = preferredName.trim() || makeNextCustomPromptName(existing);
+  const usedNames = new Set(existing.map((item) => item.name.trim()).filter(Boolean));
+  if (!usedNames.has(base)) return base;
+
+  let index = 2;
+  while (usedNames.has(`${base} ${index}`)) {
+    index += 1;
+  }
+  return `${base} ${index}`;
+}
+
 interface PromptSettingsPageProps {
   settings: AppSettings;
   onUpdatePromptPresetId: (value: AppSettings["promptPresetId"]) => void;
   onUpsertCustomPrompt: (value: PromptTemplate) => void;
   onDeleteCustomPrompt: (templateId: string) => void;
+  onInferPromptTemplate: (sampleText: string) => Promise<PromptTemplateDraft | null>;
+  inferPromptTemplateBusy: boolean;
+  inferPromptTemplateDisabled: boolean;
   onConfirm: (options: ConfirmModalOptions) => Promise<boolean>;
 }
 
@@ -31,9 +48,21 @@ export const PromptSettingsPage = memo(function PromptSettingsPage({
   onUpdatePromptPresetId,
   onUpsertCustomPrompt,
   onDeleteCustomPrompt,
+  onInferPromptTemplate,
+  inferPromptTemplateBusy,
+  inferPromptTemplateDisabled,
   onConfirm
 }: PromptSettingsPageProps) {
   const [showPromptPreview, setShowPromptPreview] = useState(false);
+  const [promptInferenceSample, setPromptInferenceSample] = useState("");
+  const promptInferenceSampleLength = Array.from(promptInferenceSample.trim()).length;
+  const promptInferenceSampleTooShort =
+    promptInferenceSampleLength > 0 &&
+    promptInferenceSampleLength < PROMPT_INFERENCE_MIN_SAMPLE_CHARS;
+  const promptInferenceDisabled =
+    inferPromptTemplateBusy ||
+    inferPromptTemplateDisabled ||
+    promptInferenceSampleLength < PROMPT_INFERENCE_MIN_SAMPLE_CHARS;
 
   const customPromptPresets = useMemo(() => {
     return settings.customPrompts.map((template) => ({
@@ -68,6 +97,21 @@ export const PromptSettingsPage = memo(function PromptSettingsPage({
       id,
       name: makeNextCustomPromptName(settings.customPrompts),
       content: selectedPrompt.content.trim()
+    };
+    onUpsertCustomPrompt(template);
+    onUpdatePromptPresetId(id);
+    setShowPromptPreview(true);
+  };
+
+  const handleInferPromptTemplate = async () => {
+    const draft = await onInferPromptTemplate(promptInferenceSample);
+    if (!draft) return;
+
+    const id = makeCustomPromptId();
+    const template: PromptTemplate = {
+      id,
+      name: makeUniqueCustomPromptName(settings.customPrompts, draft.name),
+      content: draft.content
     };
     onUpsertCustomPrompt(template);
     onUpdatePromptPresetId(id);
@@ -165,6 +209,43 @@ export const PromptSettingsPage = memo(function PromptSettingsPage({
         </span>
       </div>
 
+      <div className="field-block">
+        <div className="field-line">
+          <span>从示例文本提炼模板</span>
+          <StatusBadge tone="info">AI 生成</StatusBadge>
+        </div>
+        <label className="field">
+          <span>示例文本</span>
+          <textarea
+            className="prompt-preview prompt-sample-input"
+            value={promptInferenceSample}
+            onChange={(event) => setPromptInferenceSample(event.target.value)}
+            placeholder="粘贴一段你想模仿的文章/段落。系统会提炼语言风格、结构节奏、风格用词示例和改写约束，并创建为自定义提示词模板。"
+          />
+        </label>
+        <div className="assistant-inline-actions">
+          <button
+            type="button"
+            className="switch-chip prompt-inference-action"
+            onClick={() => void handleInferPromptTemplate()}
+            disabled={promptInferenceDisabled}
+            title={
+              promptInferenceSampleTooShort
+                ? `示例文本至少需要 ${PROMPT_INFERENCE_MIN_SAMPLE_CHARS} 个字符`
+                : "调用当前模型，从示例文本中提炼可复用提示词"
+            }
+          >
+            {inferPromptTemplateBusy ? <LoaderCircle className="spin" /> : <Sparkles />}
+            <span>{inferPromptTemplateBusy ? "正在提炼…" : "提炼并添加为模板"}</span>
+          </button>
+        </div>
+        <span className="workspace-hint">
+          {promptInferenceSampleTooShort
+            ? `当前 ${promptInferenceSampleLength} 个字符，至少 ${PROMPT_INFERENCE_MIN_SAMPLE_CHARS} 个字符后可提炼。`
+            : "生成后会自动添加并选中新模板；确认内容后点击底部“保存配置”，之后改写文档就会使用该风格。"}
+        </span>
+      </div>
+
       {selectedCustomPrompt ? (
         <div className="field-block">
           <div className="field-line">
@@ -242,4 +323,3 @@ export const PromptSettingsPage = memo(function PromptSettingsPage({
     </div>
   );
 });
-

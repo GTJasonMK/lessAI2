@@ -12,8 +12,8 @@ pub use session::{
     retry_rewrite_unit, start_rewrite,
 };
 pub use system::{
-    close_main_window, install_system_package_release, is_main_window_maximized,
-    list_release_versions, load_settings, minimize_main_window, save_settings,
-    start_drag_main_window, start_resize_main_window, switch_release_version, test_provider,
-    toggle_maximize_main_window,
+    close_main_window, infer_prompt_template, install_system_package_release,
+    is_main_window_maximized, list_release_versions, load_settings, minimize_main_window,
+    save_settings, start_drag_main_window, start_resize_main_window, switch_release_version,
+    test_provider, toggle_maximize_main_window,
 };

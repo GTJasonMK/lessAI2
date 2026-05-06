@@ -6,6 +6,7 @@ import type {
   DocumentSession,
   DocumentSnapshot,
   EditorSlotEdit,
+  PromptTemplateDraft,
   ProviderCheckResult,
   ReleaseVersionSummary,
   RewriteMode,
@@ -54,6 +55,13 @@ export async function saveSettings(settings: AppSettings) {
 
 export async function testProvider(settings: AppSettings) {
   return invokeCommand<ProviderCheckResult>("test_provider", { settings });
+}
+
+export async function inferPromptTemplate(settings: AppSettings, sampleText: string) {
+  return invokeCommand<PromptTemplateDraft>("infer_prompt_template", {
+    settings,
+    sampleText
+  });
 }
 
 export async function listReleaseVersions(proxy?: string) {

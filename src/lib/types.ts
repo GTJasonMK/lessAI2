@@ -20,6 +20,11 @@ export interface PromptTemplate {
   content: string;
 }
 
+export interface PromptTemplateDraft {
+  name: string;
+  content: string;
+}
+
 export interface AppSettings {
   baseUrl: string;
   apiKey: string;

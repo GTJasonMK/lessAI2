@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, X } from "lucide-react";
 import type {
   AppSettings,
+  PromptTemplateDraft,
   PromptTemplate,
   ProviderCheckResult,
   ReleaseVersionSummary
@@ -53,6 +54,7 @@ interface SettingsModalProps {
   onUpdatePromptPresetId: (value: AppSettings["promptPresetId"]) => void;
   onUpsertCustomPrompt: (value: PromptTemplate) => void;
   onDeleteCustomPrompt: (templateId: string) => void;
+  onInferPromptTemplate: (sampleText: string) => Promise<PromptTemplateDraft | null>;
   currentVersion: string;
   releaseVersions: ReleaseVersionSummary[];
   selectedReleaseTag: string;
@@ -86,6 +88,7 @@ export const SettingsModal = memo(function SettingsModal({
   onUpdatePromptPresetId,
   onUpsertCustomPrompt,
   onDeleteCustomPrompt,
+  onInferPromptTemplate,
   currentVersion,
   releaseVersions,
   selectedReleaseTag,
@@ -295,6 +298,11 @@ export const SettingsModal = memo(function SettingsModal({
                 onUpdatePromptPresetId={onUpdatePromptPresetId}
                 onUpsertCustomPrompt={onUpsertCustomPrompt}
                 onDeleteCustomPrompt={onDeleteCustomPrompt}
+                onInferPromptTemplate={onInferPromptTemplate}
+                inferPromptTemplateBusy={busyAction === "infer-prompt-template"}
+                inferPromptTemplateDisabled={
+                  Boolean(busyAction) && busyAction !== "infer-prompt-template"
+                }
                 onConfirm={onConfirm}
               />
             ) : null}

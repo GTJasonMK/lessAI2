@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { AppSettings, DocumentSession, PromptTemplate, ProviderCheckResult } from "../../lib/types";
 import { isSettingsReady, readableError } from "../../lib/helpers";
-import { saveSettings, testProvider } from "../../lib/api";
+import { inferPromptTemplate, saveSettings, testProvider } from "../../lib/api";
 import { isDemoRuntime } from "../../lib/runtimeMode";
 import type {
   RefreshSessionState,
@@ -221,6 +221,22 @@ export function useSettingsHandlers(options: {
     }
   }, [settings, setProviderStatus, showNotice, withBusy]);
 
+  const handleInferPromptTemplate = useCallback(
+    async (sampleText: string) => {
+      try {
+        const draft = await withBusy("infer-prompt-template", () =>
+          inferPromptTemplate(settings, sampleText)
+        );
+        showNotice("success", "已从示例文本提炼提示词模板，请确认后保存配置。");
+        return draft;
+      } catch (error) {
+        showNotice("error", `提炼失败：${readableError(error)}`);
+        return null;
+      }
+    },
+    [settings, showNotice, withBusy]
+  );
+
   return {
     handleUpdateStringSetting,
     handleUpdateBooleanSetting,
@@ -231,6 +247,7 @@ export function useSettingsHandlers(options: {
     handleUpdatePromptPresetId,
     handleUpsertCustomPrompt,
     handleDeleteCustomPrompt,
+    handleInferPromptTemplate,
     handleSaveSettings,
     handleTestProvider
   } as const;

@@ -7,6 +7,7 @@ import type {
 } from "../../lib/types";
 import type { SessionStats } from "../../lib/helpers";
 import type { EditorSlotOverrides } from "../../lib/editorSlots";
+import { AI_DETECTION_UI_ENABLED } from "../../lib/featureFlags";
 import { Panel } from "../../components/Panel";
 import { EditorReviewPane } from "./review/EditorReviewPane";
 import { DetectionReviewPane } from "./review/DetectionReviewPane";
@@ -72,6 +73,8 @@ export const ReviewPanel = memo(function ReviewPanel({
   onDetectSelection
 }: ReviewPanelProps) {
   const [reviewPane, setReviewPane] = useState<"suggestions" | "detection">("suggestions");
+  const detectionUiEnabled = AI_DETECTION_UI_ENABLED;
+  const activeReviewPane = detectionUiEnabled ? reviewPane : "suggestions";
   const anyBusy = Boolean(busyAction);
   const rewriteRunning = currentSession?.status === "running";
   const rewritePaused = currentSession?.status === "paused";
@@ -81,34 +84,38 @@ export const ReviewPanel = memo(function ReviewPanel({
   }, [currentSession?.id]);
 
   useEffect(() => {
-    if (selectionDetectionResult || currentSession?.detectionResult) {
+    if (detectionUiEnabled && (selectionDetectionResult || currentSession?.detectionResult)) {
       setReviewPane("detection");
     }
-  }, [currentSession?.detectionResult?.createdAt, selectionDetectionResult?.createdAt]);
+  }, [
+    currentSession?.detectionResult?.createdAt,
+    detectionUiEnabled,
+    selectionDetectionResult?.createdAt
+  ]);
 
-  const paneSwitch = (
+  const paneSwitch = detectionUiEnabled ? (
     <div className="summary-row review-switches" aria-label="审阅面板切换">
       <button
         type="button"
-        className={`switch-chip ${reviewPane === "suggestions" ? "is-active" : ""}`}
+        className={`switch-chip ${activeReviewPane === "suggestions" ? "is-active" : ""}`}
         onClick={() => setReviewPane("suggestions")}
       >
         {editorMode ? "编辑信息" : "改写建议"}
       </button>
       <button
         type="button"
-        className={`switch-chip ${reviewPane === "detection" ? "is-active" : ""}`}
+        className={`switch-chip ${activeReviewPane === "detection" ? "is-active" : ""}`}
         onClick={() => setReviewPane("detection")}
       >
         AI 检测
       </button>
     </div>
-  );
+  ) : null;
 
   return (
     <Panel
       title="审阅"
-      subtitle={reviewPane === "detection" ? "AI 检测结果" : editorMode ? "编辑信息" : "建议列表"}
+      subtitle={activeReviewPane === "detection" ? "AI 检测结果" : editorMode ? "编辑信息" : "建议列表"}
       className="workbench-review-panel"
       bodyClassName="workbench-review-body"
       action={
@@ -133,7 +140,7 @@ export const ReviewPanel = memo(function ReviewPanel({
               {!editorMode ? (
                 <>
                   {paneSwitch}
-                  {reviewPane === "detection" ? (
+                  {detectionUiEnabled && activeReviewPane === "detection" ? (
                     <DetectionReviewPane
                       currentSession={currentSession}
                       activeRewriteUnitId={activeRewriteUnit?.id ?? null}
@@ -180,7 +187,7 @@ export const ReviewPanel = memo(function ReviewPanel({
               {editorMode ? (
                 <>
                   {paneSwitch}
-                  {reviewPane === "detection" ? (
+                  {detectionUiEnabled && activeReviewPane === "detection" ? (
                     <DetectionReviewPane
                       currentSession={currentSession}
                       activeRewriteUnitId={activeRewriteUnit?.id ?? null}

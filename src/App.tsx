@@ -623,6 +623,7 @@ export default function App() {
     handleUpdatePromptPresetId,
     handleUpsertCustomPrompt,
     handleDeleteCustomPrompt,
+    handleInferPromptTemplate,
     handleSaveSettings,
     handleTestProvider
   } = useSettingsHandlers({
@@ -921,6 +922,7 @@ export default function App() {
             onUpdatePromptPresetId={handleUpdatePromptPresetId}
             onUpsertCustomPrompt={handleUpsertCustomPrompt}
             onDeleteCustomPrompt={handleDeleteCustomPrompt}
+            onInferPromptTemplate={handleInferPromptTemplate}
             currentVersion={currentVersion}
             releaseVersions={releaseVersions}
             selectedReleaseTag={selectedReleaseTag}

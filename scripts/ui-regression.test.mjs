@@ -158,6 +158,7 @@ const part02 = read("src/styles/part-02.css");
 const part03 = read("src/styles/part-03.css");
 const part04 = read("src/styles/part-04.css");
 const part06 = read("src/styles/part-06.css");
+const featureFlags = read("src/lib/featureFlags.ts");
 const documentActionBar = read("src/stages/workbench/document/DocumentActionBar.tsx");
 const documentPanel = read("src/stages/workbench/DocumentPanel.tsx");
 const documentFlow = read("src/stages/workbench/document/DocumentFlow.tsx");
@@ -181,12 +182,18 @@ const settingsTypes = read("src/lib/types.ts");
 const settingsConstants = read("src/lib/constants.ts");
 const frontendDiff = read("src/lib/diff.ts");
 const webBridgeSelectionText = read("src/lib/webBridgeSelectionText.ts");
+const providerSettingsPage = read("src/components/settings/ProviderSettingsPage.tsx");
 const rewriteStrategyPage = read("src/components/settings/RewriteStrategyPage.tsx");
+const promptSettingsPage = read("src/components/settings/PromptSettingsPage.tsx");
+const settingsModal = read("src/components/SettingsModal.tsx");
 const settingsHandlers = read("src/app/hooks/useSettingsHandlers.ts");
 const documentActions = read("src/app/hooks/useDocumentActions.ts");
 const documentFinalizeActions = read("src/app/hooks/useDocumentFinalizeActions.ts");
 const documentScrollRestore = read("src/app/hooks/useDocumentScrollRestore.ts");
 const appSource = read("src/App.tsx");
+const frontendApi = read("src/lib/api.ts");
+const webBridgeSource = read("src/lib/webBridge.ts");
+const webBridgeSettingsCommands = read("src/lib/webBridgeSettingsCommands.ts");
 const rewriteUnitSelection = read("src/lib/rewriteUnitSelection.ts");
 const workbenchStage = read("src/stages/WorkbenchStage.tsx");
 const reviewPanel = read("src/stages/workbench/ReviewPanel.tsx");
@@ -203,6 +210,8 @@ const editorSelectionSlotUpdates = read("src/app/hooks/editorSelectionSlotUpdate
 const useSuggestionActions = read("src/app/hooks/useSuggestionActions.ts");
 const editorSaveShortcut = read("src/stages/workbench/document/useEditorSaveShortcut.ts");
 const rustDomainModels = read("src-tauri/src/domain/models.rs");
+const rustMain = read("src-tauri/src/main.rs");
+const rustSystemSettings = read("src-tauri/src/commands/system/settings.rs");
 const rustLlmValidate = read("src-tauri/src/rewrite/llm/validate.rs");
 const docxAdapterMod = read("src-tauri/src/adapters/mod.rs");
 const docxXml = read("src-tauri/src/adapters/docx/xml.rs");
@@ -288,6 +297,27 @@ assertIncludes(settingsConstants, "timeoutMs: 45_000");
 assertIncludes(rustDomainModels, "timeout_ms: 45_000");
 assertIncludes(settingsConstants, "promptPresetId: \"humanizer_zh\"");
 assertIncludes(rustDomainModels, "\"humanizer_zh\".to_string()");
+assertIncludes(
+  promptSettingsPage,
+  "从示例文本提炼模板",
+  "提示词设置页应提供从示例文本提炼模板的入口"
+);
+assertIncludes(promptSettingsPage, "prompt-inference-action");
+assertIncludes(promptSettingsPage, "PROMPT_INFERENCE_MIN_SAMPLE_CHARS = 20");
+assertIncludes(promptSettingsPage, "风格用词示例");
+assertRule(part03, ".prompt-sample-input", "min-height", "160px");
+assertRule(part03, ".prompt-inference-action", "display", "inline-flex");
+assertIncludes(settingsModal, "onInferPromptTemplate={onInferPromptTemplate}");
+assertIncludes(settingsHandlers, '"infer-prompt-template"');
+assertIncludes(frontendApi, 'invokeCommand<PromptTemplateDraft>("infer_prompt_template"');
+assertIncludes(webBridgeSource, 'case "infer_prompt_template"');
+assertIncludes(webBridgeSettingsCommands, "inferPromptTemplateCommand");
+assertIncludes(webBridgeSettingsCommands, "promptInferenceSystemPrompt()");
+assertIncludes(webBridgeSettingsCommands, "content 必须包含“风格用词示例”小节");
+assertIncludes(rustMain, "infer_prompt_template,");
+assertIncludes(rustSystemSettings, "pub async fn infer_prompt_template");
+assertIncludes(rustSystemSettings, "fn strip_markdown_json_fence");
+assertIncludes(rustSystemSettings, "content 必须包含“风格用词示例”小节");
 for (const unwantedMetaPattern of [
   "i am claude",
   "made by anthropic",
@@ -681,11 +711,18 @@ assertIncludes(documentFinalizeActions, "restoreLoadedSessionWithScroll({");
 assertIncludes(appSource, 'import { useDocumentScrollRestore } from "./app/hooks/useDocumentScrollRestore";');
 assertIncludes(appSource, "const { documentScrollRef, captureDocumentScrollPosition, restoreDocumentScrollPosition } =");
 assertIncludes(reviewPanel, 'title="审阅"');
-assertIncludes(reviewPanel, 'AI 检测');
-assertIncludes(reviewPanel, "reviewPane === \"detection\"");
-assertIncludes(detectionReviewPane, "export const DetectionReviewPane");
-assertIncludes(detectionReviewPane, "检测全文");
-assertIncludes(detectionReviewPane, "检测选区");
+assertIncludes(
+  featureFlags,
+  "export const AI_DETECTION_UI_ENABLED = false;",
+  "AI 检测 UI 当前应保持隐藏，只保留后端/数据能力"
+);
+assertIncludes(providerSettingsPage, "AI_DETECTION_UI_ENABLED ? (");
+assertIncludes(documentActionBar, "AI_DETECTION_UI_ENABLED ? (");
+assertIncludes(documentActionBar, "EDITOR_FIXED_PLACEHOLDERS");
+assertIncludes(reviewPanel, "const detectionUiEnabled = AI_DETECTION_UI_ENABLED;");
+assertIncludes(reviewPanel, 'detectionUiEnabled && activeReviewPane === "detection"');
+assertIncludes(documentFlow, "AI_DETECTION_UI_ENABLED && Boolean(session.detectionResult)");
+assertIncludes(paragraphDocumentFlow, "AI_DETECTION_UI_ENABLED");
 assertIncludes(suggestionReviewPane, 'className="review-summary-strip"');
 assertNotIncludes(suggestionReviewPane, '当前 #{');
 assertIncludes(suggestionReviewPane, "待处理：{currentStats.unitsProposed}");

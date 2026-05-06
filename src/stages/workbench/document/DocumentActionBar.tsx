@@ -16,6 +16,7 @@ import {
   Undo2,
   WandSparkles
 } from "lucide-react";
+import { AI_DETECTION_UI_ENABLED } from "../../../lib/featureFlags";
 import type { RewriteMode } from "../../../lib/types";
 import type { DocumentView } from "../hooks/useCopyDocument";
 
@@ -28,6 +29,11 @@ const DOCUMENT_VIEW_OPTIONS: ReadonlyArray<{
   { key: "final", label: "修改后", hint: "按当前最新候选合并成整篇" },
   { key: "source", label: "修改前", hint: "查看原文整篇（不含任何改写）" }
 ];
+
+const EDITOR_FIXED_PLACEHOLDERS = Array.from(
+  { length: AI_DETECTION_UI_ENABLED ? 5 : 3 },
+  (_, index) => index
+);
 
 type CopyState = "idle" | "copying" | "done" | "error";
 
@@ -233,32 +239,36 @@ export const DocumentActionBar = memo(function DocumentActionBar({
                 <FilePenLine />
               </button>
 
-              <button
-                type="button"
-                className="icon-button"
-                onClick={onStartDetection}
-                aria-label="检测全文 AI 生成概率"
-                title={startDetectionTitle}
-                disabled={startDetectionDisabled}
-              >
-                {startDetectionBusy ? <LoaderCircle className="spin" /> : <ScanSearch />}
-              </button>
+              {AI_DETECTION_UI_ENABLED ? (
+                <>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={onStartDetection}
+                    aria-label="检测全文 AI 生成概率"
+                    title={startDetectionTitle}
+                    disabled={startDetectionDisabled}
+                  >
+                    {startDetectionBusy ? <LoaderCircle className="spin" /> : <ScanSearch />}
+                  </button>
 
-              <button
-                type="button"
-                className="icon-button"
-                onMouseDown={(event) => {
-                  if (!detectSelectionDisabled) {
-                    event.preventDefault();
-                  }
-                }}
-                onClick={onDetectSelection}
-                aria-label="检测选区 AI 生成概率"
-                title={detectSelectionTitle}
-                disabled={detectSelectionDisabled}
-              >
-                {detectSelectionBusy ? <LoaderCircle className="spin" /> : <BadgePercent />}
-              </button>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onMouseDown={(event) => {
+                      if (!detectSelectionDisabled) {
+                        event.preventDefault();
+                      }
+                    }}
+                    onClick={onDetectSelection}
+                    aria-label="检测选区 AI 生成概率"
+                    title={detectSelectionTitle}
+                    disabled={detectSelectionDisabled}
+                  >
+                    {detectSelectionBusy ? <LoaderCircle className="spin" /> : <BadgePercent />}
+                  </button>
+                </>
+              ) : null}
 
               <button
                 type="button"
@@ -350,26 +360,13 @@ export const DocumentActionBar = memo(function DocumentActionBar({
             </div>
 
             <div className="workbench-action-row is-editor" aria-hidden={!editorMode}>
-              <span
-                className="icon-button is-placeholder workbench-doc-fixed-placeholder"
-                aria-hidden="true"
-              />
-              <span
-                className="icon-button is-placeholder workbench-doc-fixed-placeholder"
-                aria-hidden="true"
-              />
-              <span
-                className="icon-button is-placeholder workbench-doc-fixed-placeholder"
-                aria-hidden="true"
-              />
-              <span
-                className="icon-button is-placeholder workbench-doc-fixed-placeholder"
-                aria-hidden="true"
-              />
-              <span
-                className="icon-button is-placeholder workbench-doc-fixed-placeholder"
-                aria-hidden="true"
-              />
+              {EDITOR_FIXED_PLACEHOLDERS.map((item) => (
+                <span
+                  key={item}
+                  className="icon-button is-placeholder workbench-doc-fixed-placeholder"
+                  aria-hidden="true"
+                />
+              ))}
 
               <button
                 type="button"
@@ -408,21 +405,23 @@ export const DocumentActionBar = memo(function DocumentActionBar({
                 <span>{editorDirty ? "保存并退出" : "返回工作台"}</span>
               </button>
 
-              <button
-                type="button"
-                className="icon-button"
-                onMouseDown={(event) => {
-                  if (!detectSelectionDisabled) {
-                    event.preventDefault();
-                  }
-                }}
-                onClick={onDetectSelection}
-                aria-label="检测选区 AI 生成概率"
-                title={detectSelectionTitle}
-                disabled={detectSelectionDisabled}
-              >
-                {detectSelectionBusy ? <LoaderCircle className="spin" /> : <BadgePercent />}
-              </button>
+              {AI_DETECTION_UI_ENABLED ? (
+                <button
+                  type="button"
+                  className="icon-button"
+                  onMouseDown={(event) => {
+                    if (!detectSelectionDisabled) {
+                      event.preventDefault();
+                    }
+                  }}
+                  onClick={onDetectSelection}
+                  aria-label="检测选区 AI 生成概率"
+                  title={detectSelectionTitle}
+                  disabled={detectSelectionDisabled}
+                >
+                  {detectSelectionBusy ? <LoaderCircle className="spin" /> : <BadgePercent />}
+                </button>
+              ) : null}
 
               <button
                 type="button"

@@ -317,6 +317,11 @@ export async function webInvoke<T>(command: string, payload?: CommandPayload) {
       return (await settingsCommands.saveSettingsCommand(payload?.settings as AppSettings)) as T;
     case "test_provider":
       return (await settingsCommands.testProviderCommand(payload?.settings as AppSettings)) as T;
+    case "infer_prompt_template":
+      return (await settingsCommands.inferPromptTemplateCommand(
+        payload?.settings as AppSettings,
+        String(payload?.sampleText ?? "")
+      )) as T;
     case "list_release_versions":
       return (await settingsCommands.listReleaseVersionsCommand()) as T;
     case "switch_release_version":

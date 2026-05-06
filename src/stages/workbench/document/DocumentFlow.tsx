@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useRef } from "react";
+import { AI_DETECTION_UI_ENABLED } from "../../../lib/featureFlags";
 import { normalizeNewlines } from "../../../lib/helpers";
 import { countSelectedRewriteUnits } from "../../../lib/rewriteUnitSelection";
 import { ParagraphDocumentFlow } from "./ParagraphDocumentFlow";
@@ -57,7 +58,7 @@ export const DocumentFlow = memo(function DocumentFlow({
   onSelectSuggestion
 }: DocumentFlowProps) {
   const selectedDisplayCount = countSelectedRewriteUnits(selectedRewriteUnitIds);
-  const hasDetectionResult = Boolean(session.detectionResult);
+  const hasDetectionResult = AI_DETECTION_UI_ENABLED && Boolean(session.detectionResult);
   const flowRootRef = useRef<HTMLParagraphElement | null>(null);
   const selectionTextRef = useRef("");
   const updateSelectionText = useCallback(

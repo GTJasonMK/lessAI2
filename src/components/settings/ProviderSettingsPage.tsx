@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Orbit } from "lucide-react";
 import type { AppSettings, ProviderCheckResult } from "../../lib/types";
 import type { NoticeTone } from "../../lib/constants";
+import { AI_DETECTION_UI_ENABLED } from "../../lib/featureFlags";
 import { ActionButton } from "../ActionButton";
 import { StatusBadge } from "../StatusBadge";
 
@@ -103,58 +104,60 @@ export const ProviderSettingsPage = memo(function ProviderSettingsPage({
         />
       </div>
 
-      <div className="field-block">
-        <div className="field-line">
-          <span>AI 检测接口</span>
-          <strong>{settings.detectionEnabled ? "已启用" : "未启用"}</strong>
+      {AI_DETECTION_UI_ENABLED ? (
+        <div className="field-block">
+          <div className="field-line">
+            <span>AI 检测接口</span>
+            <strong>{settings.detectionEnabled ? "已启用" : "未启用"}</strong>
+          </div>
+          <label className="field-check">
+            <input
+              type="checkbox"
+              checked={settings.detectionEnabled}
+              onChange={(event) =>
+                onUpdateBooleanSetting("detectionEnabled", event.target.checked)
+              }
+            />
+            <span>启用独立 AI 检测 API</span>
+          </label>
+          <div className="field-grid">
+            <label className="field">
+              <span>检测 Base URL</span>
+              <input
+                value={settings.detectionBaseUrl}
+                onChange={(event) =>
+                  onUpdateStringSetting("detectionBaseUrl", event.target.value)
+                }
+                placeholder="https://api.deepseek.com/v1"
+              />
+            </label>
+            <label className="field">
+              <span>检测 API Key</span>
+              <input
+                type="password"
+                value={settings.detectionApiKey}
+                onChange={(event) =>
+                  onUpdateStringSetting("detectionApiKey", event.target.value)
+                }
+                placeholder="sk-..."
+              />
+            </label>
+            <label className="field">
+              <span>检测 Model</span>
+              <input
+                value={settings.detectionModel}
+                onChange={(event) =>
+                  onUpdateStringSetting("detectionModel", event.target.value)
+                }
+                placeholder="deepseek-v4-flash"
+              />
+            </label>
+          </div>
+          <span className="workspace-hint">
+            检测配置独立于改写模型；检测结果以 0-100 的 AI 概率展示。
+          </span>
         </div>
-        <label className="field-check">
-          <input
-            type="checkbox"
-            checked={settings.detectionEnabled}
-            onChange={(event) =>
-              onUpdateBooleanSetting("detectionEnabled", event.target.checked)
-            }
-          />
-          <span>启用独立 AI 检测 API</span>
-        </label>
-        <div className="field-grid">
-          <label className="field">
-            <span>检测 Base URL</span>
-            <input
-              value={settings.detectionBaseUrl}
-              onChange={(event) =>
-                onUpdateStringSetting("detectionBaseUrl", event.target.value)
-              }
-              placeholder="https://api.deepseek.com/v1"
-            />
-          </label>
-          <label className="field">
-            <span>检测 API Key</span>
-            <input
-              type="password"
-              value={settings.detectionApiKey}
-              onChange={(event) =>
-                onUpdateStringSetting("detectionApiKey", event.target.value)
-              }
-              placeholder="sk-..."
-            />
-          </label>
-          <label className="field">
-            <span>检测 Model</span>
-            <input
-              value={settings.detectionModel}
-              onChange={(event) =>
-                onUpdateStringSetting("detectionModel", event.target.value)
-              }
-              placeholder="deepseek-v4-flash"
-            />
-          </label>
-        </div>
-        <span className="workspace-hint">
-          检测配置独立于改写模型；检测结果以 0-100 的 AI 概率展示。
-        </span>
-      </div>
+      ) : null}
 
       <div className="field-block">
         <div className="field-line">
