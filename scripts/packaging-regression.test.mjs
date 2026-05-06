@@ -93,4 +93,26 @@ for (const expected of ["gstreamer1.0-plugins-base", "gstreamer1.0-tools"]) {
   assert.ok(linuxDeps.includes(expected), `Linux 打包依赖缺少 GStreamer 包：${expected}`);
 }
 
+assert.ok(
+  !appImagePatch.includes('LESSAI_LINUX_GRAPHICS_MODE="${LESSAI_LINUX_GRAPHICS_MODE:-safe}"'),
+  "AppImage 不应默认启用 safe 图形模式，否则会强制 CPU 软件渲染导致严重卡顿"
+);
+assert.ok(
+  appImagePatch.includes('LESSAI_LINUX_GRAPHICS_MODE="${LESSAI_LINUX_GRAPHICS_MODE:-auto}"'),
+  "AppImage 应默认启用 auto 图形模式，兼顾渲染兼容与 GPU 路径"
+);
+assert.ok(
+  appImagePatch.includes("Safe mode forces") &&
+    appImagePatch.includes("should only be opt-in"),
+  "AppImage safe 图形模式应只作为显式故障规避选项，不能默认启用"
+);
+assert.ok(
+  appImagePatch.includes("LESSAI_LINUX_GRAPHICS_MODE=safe ./LessAI_*.AppImage"),
+  "AppImage 应保留 safe 图形模式的显式启用说明"
+);
+assert.ok(
+  appImagePatch.includes("LESSAI_LINUX_GRAPHICS_MODE=${LESSAI_LINUX_GRAPHICS_MODE:-<auto-default>}"),
+  "AppImage debug 输出应显示实际图形模式，便于定位渲染降级"
+);
+
 console.log("[packaging-regression] OK");

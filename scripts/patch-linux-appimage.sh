@@ -170,8 +170,10 @@ if [[ -d "$HERE/apprun-hooks" ]]; then
 fi
 
 # Single source of truth lives in src-tauri/src/main.rs (apply_linux_graphics_compat_env).
-# AppImage defaults to safe mode when unset; users can override via LESSAI_LINUX_GRAPHICS_MODE.
-export LESSAI_LINUX_GRAPHICS_MODE="${LESSAI_LINUX_GRAPHICS_MODE:-safe}"
+# Keep AppImage on GPU-capable auto graphics by default. Safe mode forces
+# software rendering and should only be opt-in for broken GPU/WebKit stacks:
+#   LESSAI_LINUX_GRAPHICS_MODE=safe ./LessAI_*.AppImage
+export LESSAI_LINUX_GRAPHICS_MODE="${LESSAI_LINUX_GRAPHICS_MODE:-auto}"
 
 GSTREAMER_PLUGIN_DIR="$APPDIR/usr/lib/gstreamer-1.0"
 export GST_REGISTRY_REUSE_PLUGIN_SCANNER="no"
@@ -216,6 +218,7 @@ export WEBKIT_INJECTED_BUNDLE_PATH="$WEBKIT_BASE/injected-bundle"
 
 if [[ "${LESSAI_DEBUG_APPRUN:-}" == "1" ]]; then
   echo "[AppRun] LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >&2
+  echo "[AppRun] LESSAI_LINUX_GRAPHICS_MODE=${LESSAI_LINUX_GRAPHICS_MODE:-<auto-default>}" >&2
   echo "[AppRun] WEBKIT_EXEC_PATH=$WEBKIT_EXEC_PATH" >&2
   echo "[AppRun] GDK_BACKEND=${GDK_BACKEND:-}" >&2
   echo "[AppRun] EGL_PLATFORM=${EGL_PLATFORM:-}" >&2
