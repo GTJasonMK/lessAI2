@@ -52,6 +52,26 @@ assert.ok(
   tauriBundlesWorkflow.includes("DOCX / PDF 当前采用“安全优先”的原文件写回策略。"),
   "发布流程缺少 DOCX/PDF 安全优先写回口径"
 );
+assert.ok(
+  tauriBundlesWorkflow.includes("Report updater signing mode (tag release)"),
+  "发布流程应在缺少 updater key 时报告降级模式"
+);
+assert.ok(
+  tauriBundlesWorkflow.includes("manual-download only"),
+  "缺少 updater key 的发布应降级为仅手动下载"
+);
+assert.ok(
+  tauriBundlesWorkflow.includes("skipping latest.json and signed system-package manifests"),
+  "缺少 updater key 时应跳过 latest.json 和系统包签名清单"
+);
+assert.ok(
+  tauriBundlesWorkflow.includes("若本 Release 未包含 `latest.json`"),
+  "Release 说明应提示无 latest.json 时仅支持手动下载安装"
+);
+assert.ok(
+  !tauriBundlesWorkflow.includes("[ERROR] Missing updater signing key secrets."),
+  "缺少 updater key 不应再导致 tag release 直接失败"
+);
 
 for (const expected of [
   "libgstapp.so",

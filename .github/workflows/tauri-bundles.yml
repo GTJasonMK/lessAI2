@@ -250,17 +250,17 @@ jobs:
       - name: Generate app icons
         run: pnpm run icons:generate
 
-      - name: Validate updater signing keys (tag release)
+      - name: Report updater signing mode (tag release)
         if: ${{ env.RELEASE_VERSION != '' && env.TAURI_SIGNING_PRIVATE_KEY == '' }}
         shell: bash
         run: |
-          echo "[ERROR] Missing updater signing key secrets." >&2
-          echo "[HINT] Configure repository secrets:" >&2
+          echo "[WARN] Missing updater signing key secrets." >&2
+          echo "[WARN] This release will be published as manual-download only." >&2
+          echo "[HINT] To enable in-app updates, configure repository secrets:" >&2
           echo "  - TAURI_SIGNING_PRIVATE_KEY" >&2
           echo "  - TAURI_SIGNING_PRIVATE_KEY_PASSWORD (optional, if your key is password-protected)" >&2
           echo "" >&2
-          echo "[HINT] Without a stable signing key, in-app updates cannot work." >&2
-          exit 1
+          echo "[HINT] Without a stable signing key, latest.json and signed system-package manifests will be skipped." >&2
 
       - name: Validate updater key consistency (tag release)
         if: ${{ matrix.os == 'ubuntu-latest' && env.RELEASE_VERSION != '' && env.TAURI_SIGNING_PRIVATE_KEY != '' }}
@@ -644,6 +644,9 @@ jobs:
           version="${RELEASE_VERSION}"
           repo="${GITHUB_REPOSITORY}"
 
+          if [[ -n "${TAURI_SIGNING_PRIVATE_KEY}" ]]; then
+            echo "[INFO] Signing key detected; generating updater manifests and signatures."
+
           # Prefer filenames that include the expected version if available.
           win_exe="$(ls release-assets/bundles-windows-latest__*${version}*.exe 2>/dev/null | head -n 1 || true)"
           if [ -z "$win_exe" ]; then
@@ -892,6 +895,10 @@ jobs:
             echo "[ERROR] Missing generated signature: release-assets/system-packages.json.sig" >&2
             exit 1
           fi
+          else
+            echo "[WARN] Missing TAURI_SIGNING_PRIVATE_KEY; skipping latest.json and signed system-package manifests." >&2
+            echo "[WARN] This release is still valid for manual downloads, but in-app updates/version switching will mark it unsupported." >&2
+          fi
 
           (cd release-assets && sha256sum * > checksums.sha256)
 
@@ -926,4 +933,8 @@ jobs:
             - 检测到结构歧义、锁定区变化或文本层定位不稳定时，会主动拒绝写回以保护原文。
             - 如遇写回阻断，可先导出为新文件继续处理。
             - 详细口径见：`docs/release-writeback-compatibility.md`
+
+            ## 更新方式
+            - 若本 Release 未包含 `latest.json`，说明该版本未启用签名更新清单，仅支持手动下载安装。
+            - 若本 Release 包含 `latest.json`，桌面端可使用设置页的应用内更新/版本切换能力。
           generate_release_notes: true
